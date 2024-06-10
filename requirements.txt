@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+pydantic
+motor
+pymongo
+apscheduler
+influxdb-client
+cryptography
+requests
+python-multipart
+aiofiles
+jinja2
+websockets
+aiohttp

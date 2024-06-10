@@ -1,0 +1,91 @@
+services:
+  app:
+    build: ../../.
+    container_name: monitoring-app
+    command: fastapi dev /app/src/app.py --port 80 --host 0.0.0.0
+    ports:
+      - 80:80
+      # - 5678:5678
+    volumes:
+      - /home/taufik/project-shared/api-monitoring-psre-v2/src:/app/src
+      - /home/taufik/project-shared/api-monitoring-psre-v2/data:/app/data
+      - /home/taufik/project-shared/api-monitoring-psre-v2/input:/app/input
+      - /home/taufik/project-shared/api-monitoring-psre-v2/temp:/app/tmp
+      - /home/taufik/project-shared/api-monitoring-psre-v2/logs:/app/logs:rw
+    environment:
+      NODE_NAME: DEV
+      TZ: "Asia/Jakarta"
+      INFLUX_BUCKET: monitoring
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_ORG: org
+      INFLUX_TOKEN: s3cr3ttok3n
+      TIME_INTERVAL: 180
+      TELEGRAM_BOT_TOKEN: 917180406:AAGDpIQdIDQ6IArbaifIJaUgYX-6_sE50qo
+      TELEGRAM_CHAT_ID: -4188107736 
+      SEND_NOTIF: 0
+    depends_on:
+      - mongo
+      - influxdb
+  
+  mongo:
+    image: mongo
+    container_name: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb:/data/db
+      - mongoconfig:/data/configdb
+    environment:
+      TZ: "Asia/Jakarta"
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 1234qweR
+
+  influxdb:
+    image: influxdb:2.0
+    container_name: influxdb
+    ports:
+      - 8086:8086
+    volumes:
+      - influxdata:/var/lib/influxdb2
+      - influxconfig:/etc/influxdb2
+    environment:
+      TZ: "Asia/Jakarta"
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: 1234qweR
+      DOCKER_INFLUXDB_INIT_ORG: org
+      DOCKER_INFLUXDB_INIT_BUCKET: monitoring
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: s3cr3ttok3n
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      TZ: "Asia/Jakarta"
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: 1234qweR
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: 1234qweR
+      ME_CONFIG_MONGODB_URL: mongodb://root:1234qweR@mongo:27017/
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    depends_on:
+      - influxdb
+      - app
+    volumes:
+      - grafana:/var/lib/grafana
+
+volumes:
+  mongodb:
+  mongoconfig:
+  grafana:
+  influxdata:
+  influxconfig:
