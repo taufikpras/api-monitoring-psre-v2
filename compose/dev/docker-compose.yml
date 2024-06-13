@@ -2,6 +2,7 @@ services:
   app:
     build: ../../.
     container_name: monitoring-app
+    restart: always
     command: fastapi dev /app/src/app.py --port 80 --host 0.0.0.0
     ports:
       - 80:80
@@ -75,6 +76,7 @@ services:
   grafana:
     image: grafana/grafana
     container_name: grafana
+    restart: always
     ports:
       - 3000:3000
     depends_on:

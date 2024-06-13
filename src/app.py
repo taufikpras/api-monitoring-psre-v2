@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+import asyncio
 from src.route.ca import router as ca_router
 
 
