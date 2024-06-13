@@ -1,6 +1,5 @@
 import os
 
-
 def check_param(env_name:str, default):
     if(os.environ.get(env_name) == None):    
         os.environ[env_name] = default
