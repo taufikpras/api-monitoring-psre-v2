@@ -126,23 +126,3 @@ def handle_upload(path:str):
                 cas.append(ca)
 
     return files, cas
-
-
-# def create_cert_input_list():
-#     path_list = readFileInput(INPUT_PATH, [])
-#     logger.debug(path_list)
-#     user_cert_dict = {}
-#     ca_cert_dict = {}
-#     for path in path_list:
-#         logger.debug(path)
-#         cert = readCert(getInputPath(path))
-#         cert_data = {}
-#         cert_data["filename"] = path
-#         cert_data["issuerkeyid"] = getAuthorityKeyIdentifier(cert)
-
-#         if(getIsCA(cert) == False):
-#             user_cert_dict[getSubjectKeyIdentifier(cert)] = cert_data
-#         else:
-#             ca_cert_dict[getSubjectKeyIdentifier(cert)] = cert_data
-    
-#     return user_cert_dict, ca_cert_dict
