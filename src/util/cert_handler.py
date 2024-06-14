@@ -22,17 +22,17 @@ logger = logging.getLogger('monitoring_psre')
 from src.exception.cert_exception import EncodingException
 from src.parameters import INPUT_PATH, DATA_PATH
 
-def readFileInput(path, res:list):
+def read_file_input(path, res:list):
     # res = []
     for path_ in os.listdir(path):
         # check if current path is a file
         if os.path.isfile(os.path.join(path, path_)):
             res.append(os.path.join(path, path_))
         else:
-            readFileInput(os.path.join(path, path_), res)
+            read_file_input(os.path.join(path, path_), res)
     return res
 
-def checkIsCertFile(path):
+def check_is_certificate(path):
     returnval = False
     try:
         with open(path, 'rb') as cert_file:  # try open file in text mode
@@ -52,60 +52,70 @@ def checkIsCertFile(path):
         
     return returnval
 
-def readCert(path) -> Certificate | None:
+def read_cert_from_file(path) -> Certificate | None:
     returnval = None
     
     try:
         with open(path, 'rb') as cert_file:  # try open file in text mode
             certdata = cert_file.read()
         returnval = x509.load_pem_x509_certificate(certdata, default_backend())
-        returnval = True
+
     except:  # if fail then file is non-text (binary)
-        print("Not in PEM")
+        print(f"{path} : Not in PEM")
     
     try:
         with open(path, 'rb') as cert_file:    
             certdata = cert_file.read()
         returnval = x509.load_der_x509_certificate(certdata, default_backend())
-        returnval = True
+
     except:
-        print("Not in DER")
+        print(f"{path} : Not in DER")
         
     if returnval == None:
         raise EncodingException("Encoding Format Unknown")
         
     return returnval
 
-def getIssuerCN(cert: Certificate):
+def read_cert_from_pem_str(pem: str) -> Certificate | None:
+    try:
+        returnval = x509.load_pem_x509_certificate(pem, default_backend())
+        return returnval
+    except Exception as e:
+        logger.error("Encoding Error not in PEM",exc_info=True)
+        raise EncodingException("Encoding Error not in PEM")
+        return None
+    return None
+
+def get_issuer_cn(cert: Certificate):
     cn = cert.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
     return cn
 
-def getSubjectCN(cert: Certificate):
+def get_subject_cn(cert: Certificate):
     cn = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
     return cn
 
-def getSubjectDN(cert: Certificate):
+def get_subject_dn(cert: Certificate):
     dn = cert.subject.rfc4514_string()
     return dn
 
-def getIssuertDN(cert: Certificate):
+def get_issuer_dn(cert: Certificate):
     dn = cert.issuer.rfc4514_string()
     return dn
 
-def getAuthorityKeyIdentifier(cert: Certificate):
+def get_authorithy_key_identifier(cert: Certificate):
     # retur self.userWrapper.extensions.get_extension_for_oid(x509.ExtensionOID.AUTHORITY_KEY_IDENTIFIER).value.key_identifier.hex()
     authorityKeyId = cert.extensions.get_extension_for_class(x509.AuthorityKeyIdentifier).value.key_identifier.hex()
     return authorityKeyId
     
-def getSubjectKeyIdentifier(cert: Certificate):
+def get_subject_key_identifier(cert: Certificate):
     subjectKeyID = cert.extensions.get_extension_for_oid(x509.ExtensionOID.SUBJECT_KEY_IDENTIFIER).value.digest.hex()
     return subjectKeyID
 
-def getIsCA(cert: Certificate):
+def get_is_ca(cert: Certificate):
     val = cert.extensions.get_extension_for_oid(x509.ExtensionOID.BASIC_CONSTRAINTS).value.ca
     return val
 
-def getCRLs(cert: Certificate) -> list[str]:
+def get_crls(cert: Certificate) -> list[str]:
     urls = []
     try:
         crldps = cert.extensions.get_extension_for_oid(x509.ExtensionOID.CRL_DISTRIBUTION_POINTS).value
@@ -114,11 +124,11 @@ def getCRLs(cert: Certificate) -> list[str]:
             for url in full_name:
                 urls.append(url.value)
     except x509.ExtensionNotFound:
-        logger.warning("CRL DP Extension not found")
+        logger.warning(f"{get_subject_dn(cert)} : CRL DP Extension not found")
     
     return urls
 
-def getOCSPs(cert: Certificate) -> list[str]:
+def get_ocsps(cert: Certificate) -> list[str]:
     ocsp = []
     try:
         if (len(cert.extensions.get_extension_for_oid(
@@ -130,9 +140,12 @@ def getOCSPs(cert: Certificate) -> list[str]:
                 if (i.access_method.dotted_string == "1.3.6.1.5.5.7.48.1"):
                     ocsp.append(i.access_location.value)
     except x509.ExtensionNotFound:
-        return None
+        return ocsp
     
     return ocsp
 
+def serialize_cert(cert:Certificate):
+    pem = cert.public_bytes(encoding=serialization.Encoding.PEM)
+    return pem
 
 

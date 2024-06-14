@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 import src.core.ca as core
-from src.model.ca import CA
+from src.db_schema.ca import CA
 
 str_name = "ca"
 router = APIRouter(prefix="/api/"+str_name,tags=[str_name],)

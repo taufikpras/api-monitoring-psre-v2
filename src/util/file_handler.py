@@ -1,3 +1,4 @@
+import hashlib
 import os
 import src.util.cert_handler as cert_handler
 import zipfile
@@ -5,12 +6,14 @@ import shutil
 import pathlib
 import src.parameters as param
 import logging
+from cryptography.x509.base import Certificate
+from src.model.components import CA, CRL, OCSP, File
 
 logger = logging.getLogger('monitoring_psre')
 
 
 
-def read_file_input(path=cert_handler.INPUT_PATH, res:list=[]):
+def read_file_input(path=param.TEMP, res:list=[]):
     # res = []
     for path_ in os.listdir(path):
         # check if current path is a file
@@ -21,26 +24,8 @@ def read_file_input(path=cert_handler.INPUT_PATH, res:list=[]):
             read_file_input(os.path.join(path,path_), res)
     return res
 
-def handle_upload(path:str):
-    
-    is_zip_file = zipfile.is_zipfile(path)
 
-    if(is_zip_file):
-        with zipfile.ZipFile(path, 'r') as zip_ref:
-            zip_ref.extractall(param.INPUT_PATH)
-        os.remove(path)
-
-    elif(cert_handler.checkIsCertFile(path)):
-        filename = os.path.basename(path)
-        shutil.move(path,os.path.join(param.INPUT_PATH, filename))
-    
-    else:
-        os.remove(path)
-    
-    return read_file_input(res=[])
-
-
-def getInputPath(filename:str):
+def get_input_path(filename:str):
     if(filename.startswith(param.INPUT_PATH)):
         return filename
     else:
@@ -53,50 +38,91 @@ def getDataPath(filename:str):
         return os.path.join(param.DATA_PATH,filename)
     
     
-# def createFileName(cert: Certificate):
-#     string_input = getSubjectDN(cert)+"-"+str(getSubjectKeyIdentifier(cert))
-#     filename = hashlib.sha1(string_input.encode()).hexdigest()
-#     return filename
+def create_file_id(cert: Certificate):
+    string_input = cert_handler.get_subject_dn(cert)+"-"+str(cert_handler.get_subject_key_identifier(cert))
+    filename = hashlib.sha1(string_input.encode()).hexdigest()
+    return filename
+
+def create_issuer_file_id(cert: Certificate):
+    string_input = cert_handler.get_issuer_dn(cert)+"-"+str(cert_handler.get_authorithy_key_identifier(cert))
+    filename = hashlib.sha1(string_input.encode()).hexdigest()
+    return filename
 
 def parse_input_cert(path:str):
     retval = {}
-    logger.info(path)
+    logger.info(f"open certificate file : {path}")
+    file = None
+    ca = None
+    crls = []
+    ocsps = []
     try:
-        cert = readCert(getInputPath(path))
-        retval["dn"] = getSubjectDN(cert)
-        retval["cn"] = getSubjectCN(cert)
-        retval["issuerdn"] = getIssuertDN(cert)
-        retval["issuercn"] = getIssuerCN(cert)
-        retval["issuerkeyid"] = getAuthorityKeyIdentifier(cert)
-        retval["keyid"] = getSubjectKeyIdentifier(cert)
-        retval["crl"] = getCRLs(cert)
-        retval["ocsp"] = getOCSPs(cert)
+        cert = cert_handler.read_cert_from_file(path)
+        dn = cert_handler.get_subject_dn(cert)
+        cn = cert_handler.get_subject_cn(cert)
+        issuercn = cert_handler.get_issuer_cn(cert)
+        issuerdn = cert_handler.get_issuer_dn(cert)
+        keyid = cert_handler.get_subject_key_identifier(cert)
+        issuerkeyid = cert_handler.get_authorithy_key_identifier(cert)
+        crl_urls = cert_handler.get_crls(cert)
+        ocsp_urls = cert_handler.get_ocsps(cert)
+        isca = cert_handler.get_is_ca(cert)
+        blob = cert_handler.serialize_cert(cert)
 
-        data_filename = createFileName(cert)
-        if os.path.isfile(getDataPath(data_filename)) == False:
-            shutil.copyfile(getInputPath(path), getDataPath(data_filename))
+        subject_file_id = create_file_id(cert)
+        issuer_file_id = create_issuer_file_id(cert)
+
+        file = File(subject_file_id=subject_file_id,
+                    issuer_file_id=issuer_file_id,
+                    cn=cn,
+                    dn=dn,
+                    isca=isca,
+                    blob=blob)
         
-        retval["data_filename"] = data_filename
+        for crl_url in crl_urls:
+            crl = CRL(issuer_file_id=issuer_file_id, url=crl_url)
+            crls.append(crl)
+        
+        for ocsp_url in ocsp_urls:
+            ocsp = OCSP(issuer_file_id=issuer_file_id, subject_file_id=subject_file_id,url=ocsp_url)
+            ocsps.append(ocsp)
+
+        if isca == False:
+            ca = CA(cn=issuercn, dn=issuerdn, keyid=issuerkeyid, crls=crls, ocsps=ocsps)
+        # if os.path.isfile(getDataPath(data_filename)) == False:
+        #     shutil.copyfile(getInputPath(path), getDataPath(data_filename))
+        return file, ca
     except Exception as e:
         logger.error(e, exc_info=True)
 
-    return retval
+    return file, ca
 
-def create_cert_input_list():
-    path_list = readFileInput(INPUT_PATH, [])
-    logger.debug(path_list)
-    user_cert_dict = {}
-    ca_cert_dict = {}
-    for path in path_list:
-        logger.debug(path)
-        cert = readCert(getInputPath(path))
-        cert_data = {}
-        cert_data["filename"] = path
-        cert_data["issuerkeyid"] = getAuthorityKeyIdentifier(cert)
-
-        if(getIsCA(cert) == False):
-            user_cert_dict[getSubjectKeyIdentifier(cert)] = cert_data
-        else:
-            ca_cert_dict[getSubjectKeyIdentifier(cert)] = cert_data
+def handle_upload(path:str):
     
-    return user_cert_dict, ca_cert_dict
+    is_zip_file = zipfile.is_zipfile(path)
+
+    if(is_zip_file):
+        with zipfile.ZipFile(path, 'r') as zip_ref:
+            zip_ref.extractall(param.TEMP)
+        os.remove(path)
+
+    elif(cert_handler.check_is_certificate(path)):
+        filename = os.path.basename(path)
+        shutil.move(path,os.path.join(param.TEMP, filename))
+    
+    else:
+        os.remove(path)
+    
+    list_file = read_file_input(res=[])
+
+    files: list[File] = []
+    cas: list[CA] = []
+    for file_ in list_file:
+        file, ca = parse_input_cert(file_)
+
+        files.append(file)
+
+        if ca != None:
+            if ca not in cas:
+                cas.append(ca)
+
+    return files, cas

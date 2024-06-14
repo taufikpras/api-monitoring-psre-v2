@@ -6,4 +6,4 @@ class CRL(BaseModel):
     ca_id: str 
     last_check: datetime.datetime = datetime.datetime.now()
     url: str
-    ca_filename:str
+    ca_file_id:str

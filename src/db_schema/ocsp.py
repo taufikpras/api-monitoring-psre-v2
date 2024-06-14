@@ -5,5 +5,5 @@ class OCSP(BaseModel):
     ca_id: str 
     last_check: datetime.datetime = datetime.datetime.now()
     url: str
-    user_file_name: str
-    ca_file_name: str
+    user_file_id: str
+    ca_file_id: str
