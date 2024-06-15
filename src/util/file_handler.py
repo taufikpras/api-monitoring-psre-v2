@@ -7,7 +7,7 @@ import pathlib
 import src.parameters as param
 import logging
 from cryptography.x509.base import Certificate
-from src.model.components import CA, CRL, OCSP, File
+from src.model.file import File 
 
 logger = logging.getLogger('monitoring_psre')
 
@@ -59,12 +59,8 @@ def parse_input_cert(path:str):
         cert = cert_handler.read_cert_from_file(path)
         dn = cert_handler.get_subject_dn(cert)
         cn = cert_handler.get_subject_cn(cert)
-        issuercn = cert_handler.get_issuer_cn(cert)
-        issuerdn = cert_handler.get_issuer_dn(cert)
         keyid = cert_handler.get_subject_key_identifier(cert)
         issuerkeyid = cert_handler.get_authorithy_key_identifier(cert)
-        crl_urls = cert_handler.get_crls(cert)
-        ocsp_urls = cert_handler.get_ocsps(cert)
         isca = cert_handler.get_is_ca(cert)
         blob = cert_handler.serialize_cert(cert)
 
@@ -76,27 +72,27 @@ def parse_input_cert(path:str):
                     cn=cn,
                     dn=dn,
                     isca=isca,
-                    blob=blob)
+                    blob=blob,
+                    keyid=keyid)
+        # for crl_url in crl_urls:
+        #     crl = CRL(issuer_file_id=issuer_file_id, url=crl_url)
+        #     crls.append(crl)
         
-        for crl_url in crl_urls:
-            crl = CRL(issuer_file_id=issuer_file_id, url=crl_url)
-            crls.append(crl)
-        
-        for ocsp_url in ocsp_urls:
-            ocsp = OCSP(issuer_file_id=issuer_file_id, subject_file_id=subject_file_id,url=ocsp_url)
-            ocsps.append(ocsp)
+        # for ocsp_url in ocsp_urls:
+        #     ocsp = OCSP(issuer_file_id=issuer_file_id, subject_file_id=subject_file_id,url=ocsp_url)
+        #     ocsps.append(ocsp)
 
-        if isca == False:
-            ca = CA(cn=issuercn, dn=issuerdn, keyid=issuerkeyid, crls=crls, ocsps=ocsps)
+        # if isca == False:
+        #     ca = CA(cn=issuercn, dn=issuerdn, keyid=issuerkeyid, crls=crls, ocsps=ocsps)
         # if os.path.isfile(getDataPath(data_filename)) == False:
         #     shutil.copyfile(getInputPath(path), getDataPath(data_filename))
-        return file, ca
+        return file
     except Exception as e:
         logger.error(e, exc_info=True)
 
-    return file, ca
+    return file
 
-def handle_upload(path:str):
+def handle_upload(path:str) -> list[File]:
     
     is_zip_file = zipfile.is_zipfile(path)
 
@@ -115,14 +111,11 @@ def handle_upload(path:str):
     list_file = read_file_input(res=[])
 
     files: list[File] = []
-    cas: list[CA] = []
     for file_ in list_file:
-        file, ca = parse_input_cert(file_)
+        file = parse_input_cert(file_)
 
         files.append(file)
 
-        if ca != None:
-            if ca not in cas:
-                cas.append(ca)
+        os.remove(file_)
 
-    return files, cas
+    return files

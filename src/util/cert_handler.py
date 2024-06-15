@@ -40,7 +40,7 @@ def check_is_certificate(path):
         returnval = x509.load_pem_x509_certificate(certdata, default_backend())
         returnval = True
     except:  # if fail then file is non-text (binary)
-        print("Not in PEM")
+        logger.debug("Not in PEM")
     
     try:
         with open(path, 'rb') as cert_file:    
@@ -48,7 +48,7 @@ def check_is_certificate(path):
         returnval = x509.load_der_x509_certificate(certdata, default_backend())
         returnval = True
     except:
-        print("Not in DER")
+        logger.debug("Not in DER")
         
     return returnval
 
@@ -61,7 +61,7 @@ def read_cert_from_file(path) -> Certificate | None:
         returnval = x509.load_pem_x509_certificate(certdata, default_backend())
 
     except:  # if fail then file is non-text (binary)
-        print(f"{path} : Not in PEM")
+        logger.debug(f"{path} : Not in PEM")
     
     try:
         with open(path, 'rb') as cert_file:    
@@ -69,7 +69,7 @@ def read_cert_from_file(path) -> Certificate | None:
         returnval = x509.load_der_x509_certificate(certdata, default_backend())
 
     except:
-        print(f"{path} : Not in DER")
+        logger.debug(f"{path} : Not in DER")
         
     if returnval == None:
         raise EncodingException("Encoding Format Unknown")
@@ -105,11 +105,11 @@ def get_issuer_dn(cert: Certificate):
 def get_authorithy_key_identifier(cert: Certificate):
     # retur self.userWrapper.extensions.get_extension_for_oid(x509.ExtensionOID.AUTHORITY_KEY_IDENTIFIER).value.key_identifier.hex()
     authorityKeyId = cert.extensions.get_extension_for_class(x509.AuthorityKeyIdentifier).value.key_identifier.hex()
-    return authorityKeyId
+    return str(authorityKeyId)
     
 def get_subject_key_identifier(cert: Certificate):
     subjectKeyID = cert.extensions.get_extension_for_oid(x509.ExtensionOID.SUBJECT_KEY_IDENTIFIER).value.digest.hex()
-    return subjectKeyID
+    return str(subjectKeyID)
 
 def get_is_ca(cert: Certificate):
     val = cert.extensions.get_extension_for_oid(x509.ExtensionOID.BASIC_CONSTRAINTS).value.ca

@@ -24,30 +24,6 @@ class OCSP():
         self.issuer_file_id = issuer_file_id
 
 
-class File():
-    id: str = ""
-    subject_file_id: str
-    issuer_file_id:str
-    cn: str 
-    dn: str
-    isca: bool
-    blob: str
-
-    def __init__(self, subject_file_id:str, 
-             issuer_file_id:str,
-             cn:str,
-             dn:str,
-             isca:str,
-             blob:str,
-             id:str = ""):
-        self.subject_file_id = subject_file_id
-        self.issuer_file_id = issuer_file_id
-        self.cn = cn
-        self.dn = dn
-        self.isca = isca
-        self.blob = blob
-        if(id != ""):
-            self.id = id
 
 class CA():
     id: str = ""
