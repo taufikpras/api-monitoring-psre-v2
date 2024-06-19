@@ -113,19 +113,19 @@ def parse_file_from_input_cert(path:str):
     return file
 
 def parse_crl_ocsp_from_cert_model(input_model: Cert_Model) -> tuple[list[CRL_Model],list[OCSP_Model]] :
-    crls:list[CRL_Model] = []
-    ocsps:list[OCSP_Model] = []
+    # crls:list[CRL_Model] = []
+    # ocsps:list[OCSP_Model] = []
 
-    try:
-        cert = cert_handler.read_cert_from_pem_str(input_model.blob)
-        crl_urls = cert.get_crls()
-        ocsp_urls = cert.get_ocsps()
+    # try:
+    #     cert = cert_handler.read_cert_from_pem_str(input_model.blob)
+    #     crl_urls = cert.get_crls()
+    #     ocsp_urls = cert.get_ocsps()
 
-        for crl_url in crl_urls:
-            crl = CRL_Model(issuer_file_id=)
+    #     for crl_url in crl_urls:
+    #         crl = CRL_Model(issuer_file_id=)
 
-    except Exception as e:
-        logger.error(e,exc_info=True)
+    # except Exception as e:
+    #     logger.error(e,exc_info=True)
 
 def handle_upload(path:str) -> list[Cert_Model]:
     
