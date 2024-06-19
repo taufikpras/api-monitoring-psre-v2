@@ -1,9 +1,9 @@
 from pydantic import BaseModel
-import datetime
+from datetime import datetime
 
 class OCSP(BaseModel):
     ca_id: str 
-    last_check: datetime.datetime = datetime.datetime.now()
+    updated: datetime = datetime.now()
     url: str
     user_file_id: str
     ca_file_id: str

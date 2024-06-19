@@ -11,6 +11,7 @@ import aiofiles
 from src.parameters import TEMP
 import json
 import logging
+import src.core.cert as file_core 
 
 str_name = "input"
 router = APIRouter(prefix="/api",tags=[str_name],)
@@ -26,11 +27,11 @@ logger = logging.getLogger("monitoring_psre")
 #     ls = core.add_all_file()
 #     return ls
 
-# @router.post("/list_file")
-# async def list_file():
-#     ls = file_handler.readFileInput(res=[])
+@router.post("/list_file")
+async def list_file():
+    ls = file_core.get_all()
 
-#     return ls
+    return ls
 
 @router.post("/upload")
 async def create_upload_file(file: UploadFile):
@@ -45,13 +46,11 @@ async def create_upload_file(file: UploadFile):
         while content := await file.read(1024):  # async read chunk
             await out_file.write(content)  # async write chunk
 
-    logger.info(tmp_path)
-
-    files, cas  = file_handler.handle_upload(tmp_path)
+    files = file_core.insert_from_file(tmp_path)
+    
 
     res = {}
 
     res["files"] = files
-    res["cas"] = cas
 
     return res
