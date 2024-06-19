@@ -11,7 +11,7 @@ import aiofiles
 from src.parameters import TEMP
 import json
 import logging
-import src.core.files as file_core 
+import src.core.cert as file_core 
 
 str_name = "input"
 router = APIRouter(prefix="/api",tags=[str_name],)
