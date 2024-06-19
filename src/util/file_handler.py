@@ -113,6 +113,7 @@ def parse_file_from_input_cert(path:str):
     return file
 
 def parse_crl_ocsp_from_cert_model(input_model: Cert_Model) -> tuple[list[CRL_Model],list[OCSP_Model]] :
+    raise NotImplementedError
     # crls:list[CRL_Model] = []
     # ocsps:list[OCSP_Model] = []
 
