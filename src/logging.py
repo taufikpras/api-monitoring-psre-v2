@@ -1,5 +1,6 @@
 import logging
 from logging.handlers import TimedRotatingFileHandler
+from src import parameters
 import traceback
 import sys
 import os
@@ -15,7 +16,7 @@ def log_exceptions(type, value, tb):
 def setup_loggers():
     # logging.config.fileConfig('src/logging.conf', disable_existing_loggers=False)
     # create logger
-    logger = logging.getLogger('monitoring_psre')
+    logger = logging.getLogger(parameters.LOGGER_NAME)
 
     # set logging level
     logger.setLevel(logging.DEBUG)

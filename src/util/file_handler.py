@@ -1,8 +1,8 @@
 import hashlib
 import os
-from src.model.ca import CA_Model
-from src.model.crl import CRL_Model
-from src.model.ocsp import OCSP_Model
+from src.db_schema.ca_schema import CA_Schema
+from src.db_schema.crl_schema import CRL_Schema
+from src.db_schema.ocsp_schema import OCSP_Schema
 import src.util.cert_handler as cert_handler
 import zipfile
 import shutil
@@ -10,12 +10,10 @@ import pathlib
 import src.parameters as param
 import logging
 from cryptography.x509.base import Certificate
-from src.model.cert import Cert_Model 
-import src.core.cert as cert_core 
+from src.db_schema.file_repo_schema import File_Repo_Schema 
+import src.core.file_repo_core as cert_core 
 
 logger = logging.getLogger('monitoring_psre')
-
-
 
 def read_file_input(path=param.TEMP, res:list=[]):
     # res = []
@@ -27,7 +25,6 @@ def read_file_input(path=param.TEMP, res:list=[]):
         else:
             read_file_input(os.path.join(path,path_), res)
     return res
-
 
 def get_input_path(filename:str):
     if(filename.startswith(param.INPUT_PATH)):
@@ -52,28 +49,38 @@ def create_issuer_file_id(cert: Certificate):
     filename = hashlib.sha1(string_input.encode()).hexdigest()
     return filename
 
-def parse_ca_from_file(cert:Cert_Model) -> CA_Model:
-    crls:list[CRL_Model] = []
-    ocsps:list[OCSP_Model] = []
-    ca: CA_Model = None
+def parse_ca_from_file(cert:File_Repo_Schema) -> CA_Schema:
+    crls:list[CRL_Schema] = []
+    ocsps:list[OCSP_Schema] = []
+    ca: CA_Schema = None
     
     try:
 
         issuer_cert = cert_core.find_file_from_file_id(cert.issuer_file_id)
         if(issuer_cert != None):
             cert_ = cert_handler.read_cert_from_pem_str(cert.blob)
+            issuer_dn = cert_handler.get_issuer_dn(cert_)
+            issuer_cn = cert_handler.get_issuer_cn(cert_)
+            issuer_keyid = cert_handler.get_authorithy_key_identifier(cert_)
             crl_urls = cert_handler.get_crls(cert_)
             ocsp_urls = cert_handler.get_ocsps(cert_)
 
             for crl_url in crl_urls:
-                crls.append(CRL_Model(url=crl_url, issuer_file_id=cert.issuer_file_id))
+                crls.append(CRL_Schema(url=crl_url, 
+                                      issuer_file_id=cert.issuer_file_id, 
+                                      issuer_dn=issuer_dn, 
+                                      issuer_keyid=issuer_keyid))
             
             for ocsp_url in ocsp_urls:
-                ocsps.append(OCSP_Model(url=ocsp_url,subject_file_id=cert.subject_file_id, issuer_file_id=cert.issuer_file_id))
+                ocsps.append(OCSP_Schema(url=ocsp_url, 
+                                        user_file_id=cert.subject_file_id, 
+                                        issuer_file_id=cert.issuer_file_id, 
+                                        issuer_dn=issuer_dn, 
+                                        issuer_keyid=issuer_keyid))
             
-            ca = CA_Model(cn=cert.cn, dn=cert.dn, keyid=cert.keyid, crls=crls, ocsps=ocsps)
+            ca = CA_Schema(cn=issuer_cn, dn=issuer_dn, keyid=issuer_keyid)
 
-            return ca
+            return ca, crls, ocsps
         else:
             logger.warning(f"Unable Find Issuer Cert with DN : {cert.issuerdn}")
             return None
@@ -97,7 +104,7 @@ def parse_file_from_input_cert(path:str):
         subject_file_id = create_file_id(cert)
         issuer_file_id = create_issuer_file_id(cert)
 
-        file = Cert_Model(subject_file_id=subject_file_id,
+        file = File_Repo_Schema(subject_file_id=subject_file_id,
                     issuer_file_id=issuer_file_id,
                     cn=cn,
                     dn=dn,
@@ -112,23 +119,11 @@ def parse_file_from_input_cert(path:str):
 
     return file
 
-def parse_crl_ocsp_from_cert_model(input_model: Cert_Model) -> tuple[list[CRL_Model],list[OCSP_Model]] :
+def parse_crl_ocsp_from_file_repo(input_model: File_Repo_Schema) -> tuple[list[CRL_Schema],list[OCSP_Schema]] :
     raise NotImplementedError
-    # crls:list[CRL_Model] = []
-    # ocsps:list[OCSP_Model] = []
 
-    # try:
-    #     cert = cert_handler.read_cert_from_pem_str(input_model.blob)
-    #     crl_urls = cert.get_crls()
-    #     ocsp_urls = cert.get_ocsps()
 
-    #     for crl_url in crl_urls:
-    #         crl = CRL_Model(issuer_file_id=)
-
-    # except Exception as e:
-    #     logger.error(e,exc_info=True)
-
-def handle_upload(path:str) -> list[Cert_Model]:
+def handle_upload(path:str) -> list[File_Repo_Schema]:
     
     is_zip_file = zipfile.is_zipfile(path)
 
@@ -146,7 +141,7 @@ def handle_upload(path:str) -> list[Cert_Model]:
     
     list_file = read_file_input(res=[])
 
-    files: list[Cert_Model] = []
+    files: list[File_Repo_Schema] = []
     for file_ in list_file:
         file = parse_file_from_input_cert(file_)
 

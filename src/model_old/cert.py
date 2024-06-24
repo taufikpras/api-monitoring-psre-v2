@@ -1,4 +1,4 @@
-from src.db_schema.cert import Cert_Schema as db_schema
+from src.db_schema.file_repo_schema import Cert_Schema as db_schema
 from datetime import datetime
 
 class Cert_Model():

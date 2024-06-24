@@ -2,7 +2,6 @@ from fastapi import APIRouter, File, UploadFile
 # import src.util.scheduler as sch
 # from src.model.input import Input
 # import src.core.input_core as core
-import src.util.file_handler as file_handler
 import os
 import zipfile
 # from pathlib import Path
@@ -11,7 +10,8 @@ import aiofiles
 from src.parameters import TEMP
 import json
 import logging
-import src.core.cert as file_core 
+import src.core.file_repo_core as file_core 
+import src.core.ca_core as ca_core
 
 str_name = "input"
 router = APIRouter(prefix="/api",tags=[str_name],)
@@ -48,9 +48,17 @@ async def create_upload_file(file: UploadFile):
 
     files = file_core.insert_from_file(tmp_path)
     
+    cas = []
+    for file in files :
+        ca_ = ca_core.insert_from_cert(file)
+        if(ca_ != None):
+            cas.append(ca_.model_dump())
+    
+        
 
     res = {}
 
     res["files"] = files
+    res["cas"] = cas
 
     return res

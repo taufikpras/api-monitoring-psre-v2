@@ -5,6 +5,8 @@ def check_param(env_name:str, default):
         os.environ[env_name] = default
     
     return os.environ.get(env_name)
+
+LOGGER_NAME = check_param("LOGGER","monitoring_psre")
     
 TEMP = check_param("TEMP","/app/tmp/")
 INPUT_PATH = check_param("INPUT_PATH","/app/input/")

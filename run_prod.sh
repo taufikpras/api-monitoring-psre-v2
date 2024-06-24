@@ -1,3 +1,3 @@
 #!/bin/bash
-cd compose/dev
+cd compose/prod
 docker compose up -d

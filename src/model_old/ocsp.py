@@ -13,4 +13,6 @@ class OCSP_Model():
             self.id = id
         self.url = url
         self.subject_file_id = subject_file_id
+        self.issuer_dn = issuer_dn
+        self.issuer_keyid = issuer_keyid
         self.issuer_file_id = issuer_file_id

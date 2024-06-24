@@ -1,9 +1,13 @@
 
+from src import parameters
 from src.model.crl import CRL_Model
 from src.model.ocsp import OCSP_Model
-import src.db_schema.ca as db_schema
+from src.db_schema.ca_schema import CA as db_schema
 from datetime import datetime
 from src.model.cert import Cert_Model
+import logging
+
+logger = logging.getLogger(parameters.LOGGER_NAME)
 
 class CA_Model():
     id: str = ""
@@ -35,6 +39,16 @@ class CA_Model():
         self.crls = crls 
 
         self.ocsps = ocsps 
+        
+    def serialize(self):
+        res = {}
+        res["id"] = self.id
+        res["cn"] = self.cn
+        res["dn"] = self.dn
+        res["keyid"] = self.keyid
+        res["crls"] =  [objct.__dict__ for objct in self.crls]
+        res["ocsps"] = [objct.__dict__ for objct in self.ocsps]
+        return res
 
 def to_object_from_db(input:dict) -> CA_Model:
     if(input != None):

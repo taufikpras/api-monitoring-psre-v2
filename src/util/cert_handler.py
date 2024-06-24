@@ -78,7 +78,7 @@ def read_cert_from_file(path) -> Certificate | None:
 
 def read_cert_from_pem_str(pem: str) -> Certificate | None:
     try:
-        returnval = x509.load_pem_x509_certificate(pem, default_backend())
+        returnval = x509.load_pem_x509_certificate(str.encode(pem), default_backend())
         return returnval
     except Exception as e:
         logger.error("Encoding Error not in PEM",exc_info=True)

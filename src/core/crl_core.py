@@ -1,6 +1,5 @@
 from src.model.crl import CRL, list_serial,setCRL,individual
 from src.db_schema.database import db
-import src.core.ca_core as ca_core
 from bson import ObjectId
 import src.util.net_handler as net_handler
 
