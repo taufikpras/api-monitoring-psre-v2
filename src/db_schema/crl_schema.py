@@ -3,10 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, BeforeValidator
 from typing import Optional, Annotated
 
-PyObjectId = Annotated[str, BeforeValidator(str)]
-
 class CRL_Schema(BaseModel):
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
     updated: datetime = datetime.now()
     url: str
     issuer_dn: str

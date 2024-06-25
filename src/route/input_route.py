@@ -12,6 +12,8 @@ import json
 import logging
 import src.core.file_repo_core as file_core 
 import src.core.ca_core as ca_core
+import src.core.crl_core as crl_core
+import src.core.ocsp_core as ocsp_core
 
 str_name = "input"
 router = APIRouter(prefix="/api",tags=[str_name],)
@@ -49,16 +51,33 @@ async def create_upload_file(file: UploadFile):
     files = file_core.insert_from_file(tmp_path)
     
     cas = []
+    crls = []
+    ocsps = []
     for file in files :
         ca_ = ca_core.insert_from_cert(file)
-        if(ca_ != None):
-            cas.append(ca_.model_dump())
-    
         
-
+        crls_ = crl_core.insert_from_cert(file)
+        
+        ocsps_ = ocsp_core.insert_from_cert(file)
+        
+    crls_ = crl_core.get_all()
+    ocsps_ = ocsp_core.get_all()
+    cas_ = ca_core.get_all()
+    
+    for ca_ in cas_:
+        cas.append(ca_.model_dump())
+    
+    for crl_ in crls_:
+        crls.append(crl_.model_dump())
+        
+    for ocsp_ in ocsps_:
+        ocsps.append(ocsp_.model_dump())
+    
     res = {}
 
     res["files"] = files
     res["cas"] = cas
+    res["crls"] = crls
+    res["ocsps"] = ocsps
 
     return res

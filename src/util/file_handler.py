@@ -50,8 +50,6 @@ def create_issuer_file_id(cert: Certificate):
     return filename
 
 def parse_ca_from_file(cert:File_Repo_Schema) -> CA_Schema:
-    crls:list[CRL_Schema] = []
-    ocsps:list[OCSP_Schema] = []
     ca: CA_Schema = None
     
     try:
@@ -62,14 +60,52 @@ def parse_ca_from_file(cert:File_Repo_Schema) -> CA_Schema:
             issuer_dn = cert_handler.get_issuer_dn(cert_)
             issuer_cn = cert_handler.get_issuer_cn(cert_)
             issuer_keyid = cert_handler.get_authorithy_key_identifier(cert_)
+            
+            ca = CA_Schema(cn=issuer_cn, dn=issuer_dn, keyid=issuer_keyid)
+
+            return ca
+        else:
+            logger.warning(f"Unable Find Issuer Cert with DN : {cert.issuerdn}")
+            return None
+    except Exception as e:
+        logger.error(e, exc_info=True)
+
+def parse_crl_from_file(cert:File_Repo_Schema) -> list[CRL_Schema]:
+    crls:list[CRL_Schema] = []
+    
+    try:
+
+        issuer_cert = cert_core.find_file_from_file_id(cert.issuer_file_id)
+        if(issuer_cert != None):
+            cert_ = cert_handler.read_cert_from_pem_str(cert.blob)
+            issuer_dn = cert_handler.get_issuer_dn(cert_)
+            issuer_keyid = cert_handler.get_authorithy_key_identifier(cert_)
             crl_urls = cert_handler.get_crls(cert_)
-            ocsp_urls = cert_handler.get_ocsps(cert_)
+
 
             for crl_url in crl_urls:
                 crls.append(CRL_Schema(url=crl_url, 
                                       issuer_file_id=cert.issuer_file_id, 
                                       issuer_dn=issuer_dn, 
                                       issuer_keyid=issuer_keyid))
+            return crls
+        else:
+            logger.warning(f"Unable Find Issuer Cert with DN : {cert.issuerdn}")
+            return None
+    except Exception as e:
+        logger.error(e, exc_info=True)
+
+def parse_ocsp_from_file(cert:File_Repo_Schema) -> list[OCSP_Schema]:
+    ocsps:list[OCSP_Schema] = []
+    
+    try:
+
+        issuer_cert = cert_core.find_file_from_file_id(cert.issuer_file_id)
+        if(issuer_cert != None):
+            cert_ = cert_handler.read_cert_from_pem_str(cert.blob)
+            issuer_dn = cert_handler.get_issuer_dn(cert_)
+            issuer_keyid = cert_handler.get_authorithy_key_identifier(cert_)
+            ocsp_urls = cert_handler.get_ocsps(cert_)
             
             for ocsp_url in ocsp_urls:
                 ocsps.append(OCSP_Schema(url=ocsp_url, 
@@ -77,10 +113,7 @@ def parse_ca_from_file(cert:File_Repo_Schema) -> CA_Schema:
                                         issuer_file_id=cert.issuer_file_id, 
                                         issuer_dn=issuer_dn, 
                                         issuer_keyid=issuer_keyid))
-            
-            ca = CA_Schema(cn=issuer_cn, dn=issuer_dn, keyid=issuer_keyid)
-
-            return ca, crls, ocsps
+            return ocsps
         else:
             logger.warning(f"Unable Find Issuer Cert with DN : {cert.issuerdn}")
             return None
