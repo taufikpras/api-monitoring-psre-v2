@@ -1,3 +1,4 @@
+from src.db_schema.ca_schema import CA_Schema
 from src.db_schema.ocsp_schema import OCSP_Schema, to_object_from_db, to_list_of_object_from_db
 from src.db_schema.database import db
 from bson import ObjectId
@@ -38,7 +39,7 @@ def insert_one(input:OCSP_Schema):
 def edit_one(input:OCSP_Schema):
     collection = db[COLLECTION_NAME]
     input.url = net_handler.check_url(input.url)
-    res = collection.find_one_and_update({"dn":input.issuer_dn, "keyid":input.issuer_keyid}, {"$set": dict(input)},return_document=True)
+    res = collection.find_one_and_update({"issuer_dn":input.issuer_dn, "issuer_keyid":input.issuer_keyid}, {"$set": dict(input)},return_document=True)
     return to_object_from_db(res)
 
 def delete_one(id:str):
@@ -50,6 +51,11 @@ def find_url(input: OCSP_Schema):
     url = net_handler.check_url(input.url)
     result = to_object_from_db(collection.find_one({"issuer_dn":input.issuer_dn, "url":url}))
     return result
+
+def find_by_ca(input: CA_Schema) -> list[OCSP_Schema]:
+    collection = db[COLLECTION_NAME]
+    results = to_list_of_object_from_db(collection.find({"issuer_dn":input.dn, "issuer_keyid":input.keyid}))
+    return results
 
 def insert_from_cert(input_file: File_Repo_Schema):
     ocsps = file_handler.parse_ocsp_from_file(input_file)

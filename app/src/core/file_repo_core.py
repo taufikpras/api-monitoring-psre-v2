@@ -4,8 +4,9 @@ from src.db_schema.file_repo_schema import File_Repo_Schema, to_list_of_object_f
 import src.util.file_handler as file_handler
 from bson import ObjectId
 import logging
+import src.parameters as param
+logger = logging.getLogger(param.LOGGER_NAME)
 
-logger = logging.getLogger("monitoring_psre")
 COLLECTION_NAME = "cert"
 
 def get_all() -> list[File_Repo_Schema]:

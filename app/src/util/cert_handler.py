@@ -2,7 +2,7 @@ import os
 from cryptography import x509
 from cryptography.x509.oid import ExtensionOID
 from cryptography.hazmat.backends import default_backend
-from cryptography.x509.base import Certificate
+from cryptography.x509.base import Certificate, CertificateRevocationList
 from cryptography.x509.oid import NameOID
 import logging
 import hashlib
@@ -13,14 +13,12 @@ from cryptography.x509.ocsp import OCSPCertStatus
 from cryptography.hazmat.primitives.hashes import SHA256, SHA1
 from cryptography.hazmat.primitives import serialization
 
-from datetime import datetime, timedelta, timezone
-
-import requests
-
 logger = logging.getLogger('monitoring_psre')
 
 from src.exception.cert_exception import EncodingException
-from src.parameters import INPUT_PATH, DATA_PATH
+
+CRL_NUMBER_OID = x509.oid.ExtensionOID.CRL_NUMBER
+AUTHORITY_KEY_IDENTIFIER_OID = x509.ExtensionOID.AUTHORITY_KEY_IDENTIFIER
 
 def read_file_input(path, res:list):
     # res = []
@@ -85,6 +83,21 @@ def read_cert_from_pem_str(pem: str) -> Certificate | None:
         raise EncodingException("Encoding Error not in PEM")
         return None
     return None
+
+def read_crl_from_content(crldata) -> CertificateRevocationList | None:
+    crl = None
+    try:
+        crl = x509.load_pem_x509_crl(crldata, default_backend())
+    except:
+        logger.debug("CRL not in pem")
+
+    try:
+        crl = x509.load_der_x509_crl(crldata, default_backend())
+    except:
+        logger.debug("CRL not in der")
+    
+    return crl
+        
 
 def get_issuer_cn(cert: Certificate):
     cn = cert.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value

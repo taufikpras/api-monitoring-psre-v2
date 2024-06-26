@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from pydantic import BaseModel, Field, BeforeValidator
-from typing import Optional, Annotated
+from pydantic import BaseModel
 
 class CRL_Schema(BaseModel):
     updated: datetime = datetime.now()
