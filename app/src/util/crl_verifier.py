@@ -10,13 +10,14 @@ class CRL_verifier():
     signature: int = 0
     time_delta: int = 0
     
-    response_time: int
+    response_time: int = 0
     content: dict
-    message: str
+    message: list[str]
     
     url: str
     user_cert_pem: str
     ca_cert_pem: str
+    
     
     
     def request_crl(self, url: str):
@@ -27,7 +28,6 @@ class CRL_verifier():
             logger.debug(f"start downloading : {input['url']}")
             response = requests.get(input["url"])
             logger.debug(response.status_code)
-            message = ""
         except Exception as err:
             # logger.error("Connection Error : "+input["url"],exc_info=True)
             logger.error(f"Connection Error : {input['url']}",exc_info=True)
@@ -35,7 +35,7 @@ class CRL_verifier():
 
         endtime = timer()
         
-    def verify_crl(crldata, ca_filename:str) -> bool:
+    def verify_crl(self, crldata, ca_filename:str) -> bool:
         raise NotImplementedError
 
     def getCRLContent(crldata):
