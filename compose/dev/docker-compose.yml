@@ -1,6 +1,6 @@
 services:
   app:
-    build: ../../.
+    build: ../../app/.
     container_name: monitoring-app
     restart: always
     command: fastapi dev /app/src/app.py --port 80 --host 0.0.0.0
@@ -8,7 +8,7 @@ services:
       - 80:80
       # - 5678:5678
     volumes:
-      - /home/taufik/project-shared/api-monitoring-psre-v2/src:/app/src
+      - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
       - /home/taufik/project-shared/api-monitoring-psre-v2/data:/app/data
       - /home/taufik/project-shared/api-monitoring-psre-v2/input:/app/input
       - /home/taufik/project-shared/api-monitoring-psre-v2/temp:/app/tmp
