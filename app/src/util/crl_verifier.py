@@ -1,5 +1,4 @@
 import requests
-import logging
 from timeit import default_timer as timer
 from datetime import datetime, timedelta, timezone
 import os
@@ -7,8 +6,9 @@ import os
 from src.db_schema.queue_schema import Queue_Schema
 from src.util import cert_handler
 
-
-logger = logging.getLogger('monitoring_psre')
+import logging
+import src.parameters as param
+logger = logging.getLogger(param.LOGGER_NAME)
 
 class CRL_verifier():
     availibility: int = 0
@@ -19,12 +19,21 @@ class CRL_verifier():
     response_time: int = 0
 
     content: dict = {}
-    message: list[str]
+    message: list[str] = []
 
     queue: Queue_Schema
 
     def __init__(self, queue: Queue_Schema):
         self.queue = queue
+        self.message = []
+        self.availibility = 0
+        self.validity = 0
+        self.signature = 0
+        self.time_delta = 0 
+        self.overall = 0
+        self.response_time = 0
+
+        self.content = {}
     
     def request_crl(self):
         logger.info(f"Start Check CRL Availibility : {self.queue.url}")
@@ -102,3 +111,47 @@ class CRL_verifier():
             self.content["time_diff"] = time_delta / 3600 
             self.content["time_now"] = now_.strftime("%Y-%m-%d %H:%M:%S")
             self.content["timezone"] = tzname
+
+    def to_dict(self):
+        return {
+            "queue" : self.queue.__dict__,
+            "overall" : self.overall,
+            "availibility" : self.availibility,
+            "validity" : self.validity,
+            "signature" : self.signature,
+            "time_delta" : self.time_delta,
+            "response_time" : self.response_time,
+            "message" : self.message,
+            "content" : self.content
+        }
+    
+    def get_verification_result(self) -> dict:
+        return {
+            "overall" : self.overall,
+            "availibility" : self.availibility,
+            "validity" : self.validity,
+            "signature" : self.signature,
+            "time_delta" : self.time_delta,
+            "response_time" : self.response_time
+        }
+
+    def get_ca_info(self) -> dict:
+        return {
+            "cn" : self.queue.issuer_cn,
+            "dn" : self.queue.issuer_dn,
+            "url" : self.queue.url
+        }
+
+    @classmethod
+    def from_dict(cls,input:dict):
+        queue = Queue_Schema.from_dict(input["queue"])
+
+        obj = cls(queue)
+        obj.overall = input["overall"]
+        obj.availibility = input["availibility"]
+        obj.validity = input["validity"]
+        obj.signature = input["signature"]
+        obj.time_delta = input["time_delta"]
+        obj.response_time = input["response_time"]
+        obj.message = input["message"]
+        obj.content = input["content"]

@@ -1,19 +1,14 @@
 import os
 from cryptography import x509
-from cryptography.x509.oid import ExtensionOID
 from cryptography.hazmat.backends import default_backend
 from cryptography.x509.base import Certificate, CertificateRevocationList
 from cryptography.x509.oid import NameOID
-import logging
-import hashlib
-import shutil
 
-from cryptography.x509 import ocsp
-from cryptography.x509.ocsp import OCSPCertStatus
-from cryptography.hazmat.primitives.hashes import SHA256, SHA1
 from cryptography.hazmat.primitives import serialization
 
-logger = logging.getLogger('monitoring_psre')
+import logging
+import src.parameters as param
+logger = logging.getLogger(param.LOGGER_NAME)
 
 from src.exception.cert_exception import EncodingException
 

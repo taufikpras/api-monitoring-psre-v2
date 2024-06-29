@@ -32,8 +32,8 @@ def setup_loggers():
     handler.setLevel(logging.DEBUG)
 
     # create formatter
-    # formatter = logging.Formatter('%(name)s - %(asctime)s - %(levelname)s - [%(filename)s:%(funcName)s:%(lineno)d] - %(message)s')
-    formatter = logging.Formatter("{'name':%(name)s,'time':%(asctime)s,'severity':%(levelname)s,'file':%(filename)s:%(funcName)s:%(lineno)d,'messages':%(message)s}")
+    formatter = logging.Formatter('%(name)s - %(asctime)s - %(levelname)s - [%(filename)s:%(funcName)s:%(lineno)d] - %(message)s')
+    # formatter = logging.Formatter("{'name':%(name)s,'time':%(asctime)s,'severity':%(levelname)s,'file':%(filename)s:%(funcName)s:%(lineno)d,'messages':%(message)s}")
     # add formatter to rotating file handler
     handler.setFormatter(formatter)
 

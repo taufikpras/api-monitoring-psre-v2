@@ -6,14 +6,13 @@ from src.db_schema.ocsp_schema import OCSP_Schema
 import src.util.cert_handler as cert_handler
 import zipfile
 import shutil
-import pathlib
-import src.parameters as param
-import logging
 from cryptography.x509.base import Certificate
 from src.db_schema.file_repo_schema import File_Repo_Schema 
 import src.core.file_repo_core as cert_core 
 
-logger = logging.getLogger('monitoring_psre')
+import logging
+import src.parameters as param
+logger = logging.getLogger(param.LOGGER_NAME)
 
 def read_file_input(path=param.TEMP, res:list=[]):
     # res = []

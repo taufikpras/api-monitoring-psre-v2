@@ -7,10 +7,11 @@ from src.util import file_handler
 from bson import ObjectId
 import logging
 import src.parameters as param
+logger = logging.getLogger(param.LOGGER_NAME)
 
 COLLECTION_NAME = "ca"
 
-logger = logging.getLogger(param.LOGGER_NAME)
+
 
 def get_all() -> list[CA_Schema]:
     collection = db[COLLECTION_NAME]
