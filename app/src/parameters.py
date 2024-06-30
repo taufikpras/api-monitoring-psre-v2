@@ -18,7 +18,10 @@ MONGO_PASS = check_param("MONGO_PASS","1234qweR")
 MONGO_PORT = check_param("MONGO_PORT","27017")
 
 INFLUX_URL = check_param("INFLUX_URL","http://influxdb:8086")
-INFLUX_TOKEN = check_param("INFLUX_URL","s3cr3ttok3n")
-INFLUX_ORG = check_param("INFLUX_URL","org")
-INFLUX_BUCKET = check_param("INFLUX_URL","monitoring")
+INFLUX_TOKEN = check_param("INFLUX_TOKEN","s3cr3ttok3n")
+INFLUX_ORG = check_param("INFLUX_ORG","org")
+INFLUX_BUCKET = check_param("INFLUX_BUCKET","monitoring")
+
+CELERY_ENABLE_UTC = check_param("CELERY_ENABLE_UTC","False")
+TZ = check_param("TZ","Asia/Jakarta")
 

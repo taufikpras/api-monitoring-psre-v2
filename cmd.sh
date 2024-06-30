@@ -40,6 +40,11 @@ while true; do
          cd compose/dev
          docker compose down
          exit;;
+      restart_dev)
+         cd compose/dev
+         docker compose down
+         docker compose up -d
+         exit;;
       rebuild_dev)
          cd compose/dev
          docker compose down

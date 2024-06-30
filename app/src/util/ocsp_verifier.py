@@ -23,8 +23,8 @@ class OCSP_verifier():
 
     queue: Queue_Schema
 
-    def __init__(self, queue: Queue_Schema):
-        self.queue = queue
+    def __init__(self, queue_: dict):
+        self.queue = Queue_Schema.from_dict(queue_)
         self.message = []
         self.availibility = 0
         self.verification = 0

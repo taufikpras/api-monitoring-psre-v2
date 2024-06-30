@@ -12,3 +12,8 @@ aiofiles
 jinja2
 websockets
 aiohttp
+redis
+celery[redis]
+flower
+fastapi_utils
+typing_inspect

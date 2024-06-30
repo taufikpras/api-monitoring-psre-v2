@@ -1,4 +1,4 @@
-
+import json
 
 class Queue_Schema():
     name:str
@@ -26,4 +26,10 @@ class Queue_Schema():
             setattr(obj, key, value)
         return obj
 
+    def toJson(self):
+        return json.dumps(
+            self,
+            default=lambda o: o.__dict__, 
+            sort_keys=True,
+            indent=4)
     

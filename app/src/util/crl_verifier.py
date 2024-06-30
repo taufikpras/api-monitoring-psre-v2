@@ -23,8 +23,8 @@ class CRL_verifier():
 
     queue: Queue_Schema
 
-    def __init__(self, queue: Queue_Schema):
-        self.queue = queue
+    def __init__(self, queue_: dict):
+        self.queue = Queue_Schema.from_dict(queue_)
         self.message = []
         self.availibility = 0
         self.validity = 0
@@ -49,12 +49,12 @@ class CRL_verifier():
                 ret_byte = response.content
                 return ret_byte
             else:
-                self.message = f"Error status code {response.status_code}"
+                self.message.append(f"Error status code {response.status_code}")
                 logger.warning(f"status code {self.queue.url} : {response.status_code}")
         except Exception as err:
             # logger.error("Connection Error : "+input["url"],exc_info=True)
             logger.error(f"Connection Error : {self.queue.url}",exc_info=True)
-            self.message = "Unable to connect"
+            self.message.append("Unable to connect")
         finally:
             endtime = timer()
             self.response_time = endtime - strtime
@@ -108,7 +108,7 @@ class CRL_verifier():
             self.content["auth_key_id"] = crl.extensions.get_extension_for_oid(cert_handler.AUTHORITY_KEY_IDENTIFIER_OID).value.key_identifier.hex()
             self.content["last_update"] = last_update.strftime("%Y-%m-%d %H:%M:%S")
             self.content["next_update"] = next_update.strftime("%Y-%m-%d %H:%M:%S")
-            self.content["time_diff"] = time_delta / 3600 
+            self.content["time_diff"] = time_delta.seconds / 3600 
             self.content["time_now"] = now_.strftime("%Y-%m-%d %H:%M:%S")
             self.content["timezone"] = tzname
 

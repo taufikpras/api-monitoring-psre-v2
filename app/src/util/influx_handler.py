@@ -1,4 +1,5 @@
 from src.util.crl_verifier import CRL_verifier
+from src.util.ocsp_verifier import OCSP_verifier
 from src.db_schema.database import influx_client, INFLUX_BUCKET, INFLUX_ORG
 from influxdb_client import Point
 from influxdb_client.client.write_api import SYNCHRONOUS
@@ -82,9 +83,9 @@ def add_crl_metrics(crl_:CRL_verifier):
 
     insert_influx(metrics)
 
-def add_ocsp_metrics(crl_:OCSP):
-    metrics = Metrics_Schema(crl_.queue.name)
-    metrics.fields = crl_.get_verification_result()
-    metrics.tags = crl_.get_ca_info()
+def add_ocsp_metrics(ocsp:OCSP_verifier):
+    metrics = Metrics_Schema(ocsp.queue.name)
+    metrics.fields = ocsp.get_verification_result()
+    metrics.tags = ocsp.get_ca_info()
 
     insert_influx(metrics)

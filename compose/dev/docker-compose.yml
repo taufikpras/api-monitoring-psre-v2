@@ -27,7 +27,13 @@ services:
     depends_on:
       - mongo
       - influxdb
-  
+      - redis
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+
   mongo:
     image: mongo
     container_name: mongo
@@ -59,6 +65,55 @@ services:
       DOCKER_INFLUXDB_INIT_ORG: org
       DOCKER_INFLUXDB_INIT_BUCKET: monitoring
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: s3cr3ttok3n
+
+  celery_worker1:
+    container_name: celery_worker1
+    restart: always
+    build: ../../app/.
+    command: celery -A src.celery worker --concurrency=3 --pool=prefork --loglevel=info
+    volumes:
+      - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
+    environment:
+      TZ: "Asia/Jakarta"
+      CELERY_TIMEZONE: "Asia/Jakarta"
+      CELERY_ENABLE_UTC: False
+    depends_on:
+      - redis
+      - influxdb
+      - app
+  celery_worker2:
+    container_name: celery_worker2
+    restart: always
+    build: ../../app/.
+    command: celery -A src.celery worker --concurrency=3 --pool=prefork --loglevel=info
+    volumes:
+      - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
+    environment:
+      TZ: "Asia/Jakarta"
+      CELERY_TIMEZONE: "Asia/Jakarta"
+      CELERY_ENABLE_UTC: False
+    depends_on:
+      - redis
+      - influxdb
+      - app
+
+  flower:
+    container_name: flower
+    restart: always
+    build: ../../app/.
+    command: celery -A src.celery flower --broker=redis://redis:6379/0 --port=5555
+    environment:
+      TZ: "Asia/Jakarta"
+      CELERY_TIMEZONE: "Asia/Jakarta"
+      CELERY_ENABLE_UTC: False
+    ports:
+      - 5556:5555
+    depends_on:
+      - app
+      - redis
+      - celery_worker1
+      - celery_worker2
+
 
   mongo-express:
     image: mongo-express
