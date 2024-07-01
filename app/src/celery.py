@@ -1,9 +1,10 @@
 
 from src.db_schema.queue_schema import Queue_Schema
-from src.core import queue_core
+from src.core import queue_core, ticket_core
 from src.util.crl_verifier import CRL_verifier
 from src.util.ocsp_verifier import OCSP_verifier
 import src.util.influx_handler as influx_handler
+
 from src import parameters
 from celery import Celery
 
@@ -33,8 +34,9 @@ def crl_verifier(queue: dict):
     data = verifier.request_crl()
     verifier.verify_crl(data)
     verifier.get_crl_content(data)
-    
+
     influx_handler.add_crl_metrics(verifier)
+    ticket_core.log_ticket(verifier.result)
 
     return verifier.to_dict()
 
@@ -46,5 +48,6 @@ def ocsp_verifier(queue: dict):
     verifier.get_ocsp_content(data)
     
     influx_handler.add_ocsp_metrics(verifier)
+    ticket_core.log_ticket(verifier.result)
 
     return verifier.to_dict()

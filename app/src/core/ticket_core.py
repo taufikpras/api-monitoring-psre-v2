@@ -1,4 +1,6 @@
-from src.db_schema.ticket_schema import to_object_from_db, to_list_of_object_from_db, Tickets_Schema
+from src.db_schema.queue_schema import Queue_Schema
+from src.db_schema.verification_result_schema import Result_Schema
+from src.db_schema.ticket_schema import to_object_from_db, to_list_of_object_from_db, Tickets_Schema, create_ticket_id, set_ticket
 from src.db_schema.database import db
 from bson import ObjectId
 from datetime import datetime, timedelta
@@ -15,37 +17,42 @@ def get_all_active():
     result = to_list_of_object_from_db(collection.find({"resolve":False}))
     return result
 
-def insert_one(input:TicketsInput):
+def find_active_tickets(result:Result_Schema) -> Tickets_Schema:
     collection = db[COLLECTION_NAME]
-    exist = find_active_tickets(input.ca_id, input.obj_id)
-    
-    if(exist == None):
-        input = set_ticket_from_input(input)
-        res = collection.insert_one(dict(input))
-        res = str(res.inserted_id)
-    else:
-        res = exist["id"]
-    return get_one(res)
-
-def delete_one(id:str):
-    collection = db[COLLECTION_NAME]
-    return str(collection.find_one_and_delete({"_id": ObjectId(id)}))
-
-def update(id:str, input:Tickets):
-    collection = db[COLLECTION_NAME]
-    res = collection.find_one_and_update({"_id":ObjectId(id)}, {"$set": dict(input)},return_document=True)
-    return individual(res)
-
-def find_active_tickets(ca_id:str, obj_id:str):
-    collection = db[COLLECTION_NAME]
-    uid = create_uid(ca_id, obj_id)
-    result = individual(collection.find_one({"uid":uid, "resolve":False}))
+    ticket_id = create_ticket_id(issuer_keyid=result.issuer_keyid, issuer_dn=result.issuer_dn, url=result.url)
+    result = to_object_from_db(collection.find_one({"ticket_id":ticket_id, "resolve":False}))
     return result
 
-def set_resolve(ca_id:str, obj_id:str):
+def insert_one_from_result(result:Result_Schema) -> Tickets_Schema:
     collection = db[COLLECTION_NAME]
-    uid = create_uid(ca_id, obj_id)
-    result = collection.find_one({"uid":uid, "resolve":False})
+    exist = find_active_tickets(result)
+    ticket_id = create_ticket_id(issuer_keyid=result.issuer_keyid, issuer_dn=result.issuer_dn, url=result.url)
+    if(exist == None):
+        input = set_ticket(issuer_dn=result.issuer_dn,
+                               issuer_keyid=result.issuer_keyid,
+                               url=result.url,
+                               message=",".join(result.message))
+        collection.insert_one(dict(input))
+        res = input
+    else:
+        res = exist
+    return res
+
+def delete_one(ticket_id:str):
+    collection = db[COLLECTION_NAME]
+    return str(collection.find_one_and_delete({"ticket_id":ticket_id, "resolve":False}))
+
+def update(input:Tickets_Schema):
+    collection = db[COLLECTION_NAME]
+    res = collection.find_one_and_update({"ticket_id":input.ticket_id, "resolve":False}, {"$set": dict(input)},return_document=True)
+    return to_object_from_db(res)
+
+
+
+def set_resolve(result_:Result_Schema) -> Tickets_Schema:
+    collection = db[COLLECTION_NAME]
+    ticket_id = create_ticket_id(issuer_keyid=result_.issuer_keyid, issuer_dn=result_.issuer_dn, url=result_.url)
+    result = collection.find_one({"ticket_id":ticket_id, "resolve":False})
 
     if(result != None):
         result["resolve"] = True
@@ -53,63 +60,58 @@ def set_resolve(ca_id:str, obj_id:str):
         result["end"] = datetime.now()
 
         if(result["occurance"] < MIN_OCCURANCE):
-            res = delete_one(result["_id"])
+            res = delete_one(ticket_id)
+            res = to_object_from_db(result)
         else:
-            res = collection.find_one_and_update({"_id":ObjectId(result["_id"])}, {"$set": result},return_document=True)
-            res = individual(res)
+            res = collection.find_one_and_update({"ticket_id":ticket_id, "resolve":False}, {"$set": result},return_document=True)
+            res = to_object_from_db(res)
     else:
         res = None
     return res
 
-def log_ticket(input:dict, verification:dict, message):
-    active = find_active_tickets(input["ca_id"],input["id"])
+def log_ticket(result:Result_Schema)-> Tickets_Schema:
+    active = find_active_tickets(result)
     ret = None
-    if(verification['overall'] == 0):
+    if(result.overall == 0):
         if(active == None):
-            logger.info(f'Tickets created : {input["cn"]}')
-            ticket = TicketsInput(ca_id=input["ca_id"],
-                        cn=input["cn"],
-                        obj_id=input["id"],
-                        message=f'{input["cn"]} - {message} - {input["url"]}',
-                        url=input["url"])
-            ret = insert_one(ticket)
+            logger.info(f'Tickets created : {result.issuer_dn}')
+            ret = insert_one_from_result(result)
         else:
-            logger.info(f'Update Occurance : {input["cn"]}')
-            active["occurance"] = active["occurance"] + 1
-            active_ = to_object(active)
-            ret = update(id=active["id"], input=active_)
+            logger.info(f'Update Occurance : {result.issuer_dn}')
+            active.occurance = active.occurance + 1
+            ret = update(active)
     else:
         if active != None:
-            logger.info(f'Tickets resolved : {input["cn"]}')
-            ret = set_resolve(input["ca_id"],input["id"])
+            logger.info(f'Tickets resolved : {result.issuer_dn}')
+            ret = set_resolve(result)
     return ret
 
-def get_ticket_for_realtime_notif():
-    collection = db[COLLECTION_NAME]
+# def get_ticket_for_realtime_notif():
+#     collection = db[COLLECTION_NAME]
 
-    time_ = datetime.now() - timedelta(hours=2)
-    new_notif = {"$and":[{"last_notif":None},{"occurance":{"$gte":MIN_OCCURANCE}}]}
-    old_notif = {"$and":[{'last_notif': {"$lte": time_}},{"resolve":False}]}
-    params = {"$or":[old_notif, new_notif]}
+#     time_ = datetime.now() - timedelta(hours=2)
+#     new_notif = {"$and":[{"last_notif":None},{"occurance":{"$gte":MIN_OCCURANCE}}]}
+#     old_notif = {"$and":[{'last_notif': {"$lte": time_}},{"resolve":False}]}
+#     params = {"$or":[old_notif, new_notif]}
 
-    result = collection.find(params)
-    return list_serial(result)
+#     result = collection.find(params)
+#     return list_serial(result)
 
-def get_ticket_for_reguler_report():
-    collection = db[COLLECTION_NAME]
+# def get_ticket_for_reguler_report():
+#     collection = db[COLLECTION_NAME]
 
-    time_ = datetime.now() - timedelta(days=7)
-    params = {'start': {"$gte": time_}}
+#     time_ = datetime.now() - timedelta(days=7)
+#     params = {'start': {"$gte": time_}}
 
-    result = collection.find(params)
-    return list_serial(result)
+#     result = collection.find(params)
+#     return list_serial(result)
 
-def update_last_notif(id):
-    collection = db[COLLECTION_NAME]
-    result = collection.find_one({"_id":ObjectId(id)})
-    result["last_notif"] = datetime.now()
-    res = collection.find_one_and_update({"_id":ObjectId(result["_id"])}, {"$set": result},return_document=True)
-    return individual(res)
+# def update_last_notif(id):
+#     collection = db[COLLECTION_NAME]
+#     result = collection.find_one({"_id":ObjectId(id)})
+#     result["last_notif"] = datetime.now()
+#     res = collection.find_one_and_update({"_id":ObjectId(result["_id"])}, {"$set": result},return_document=True)
+#     return individual(res)
 
 
 

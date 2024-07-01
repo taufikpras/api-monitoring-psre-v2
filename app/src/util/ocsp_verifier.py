@@ -6,6 +6,7 @@ from src.util.cert_handler import read_cert_from_pem_str, get_is_ca, get_subject
 from cryptography.x509 import ocsp, Certificate
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives import serialization
+from src.db_schema.verification_result_schema import OCSP_Result_Schema
 from timeit import default_timer as timer
 from datetime import datetime
 
@@ -14,23 +15,16 @@ import src.parameters as param
 logger = logging.getLogger(param.LOGGER_NAME)
 
 class OCSP_verifier():
-    availibility: int = 0
-    verification: int = 0
-    overall: int = 0
-    response_time: int = 0
+    result: OCSP_Result_Schema 
     content: dict = {}
-    message: list[str] = []
-
     queue: Queue_Schema
 
     def __init__(self, queue_: dict):
         self.queue = Queue_Schema.from_dict(queue_)
-        self.message = []
-        self.availibility = 0
-        self.verification = 0
-        self.overall = 0
-        self.response_time = 0
-
+        self.result = OCSP_Result_Schema()
+        self.result.issuer_dn = self.queue.issuer_dn
+        self.result.issuer_keyid = self.queue.issuer_keyid
+        self.result.url = self.queue.url
         self.content = {}
 
     def create_ocsp_req(self,user_cert_pem:str, ca_cert_pem:str):
@@ -56,10 +50,10 @@ class OCSP_verifier():
 
         except Exception as err:
             logger.error("Connection Error : "+self.queue.url)
-            self.message.append("Connection Error")
+            self.result.message.append("Connection Error")
         finally:
             endtime = timer()
-            self.response_time = endtime - strtime
+            self.result.response_time = endtime - strtime
             return response
         
     def verify_ocsp_cert(self, cert:Certificate):
@@ -69,6 +63,7 @@ class OCSP_verifier():
             not_valid_after = cert.not_valid_after_utc.astimezone()
             if(not_valid_after < now_tz):
                 logger.warning(get_subject_cn(cert)+ " is Expired",exc_info=True)
+                self.result.message.append("OCSP Certificate Expired")
                 return False
             else:
                 return True
@@ -81,21 +76,21 @@ class OCSP_verifier():
             ocsp_resp = ocsp.load_der_ocsp_response(response)
 
             if(ocsp_resp != None and ocsp_resp.certificate_status):
-                self.availability = 1
+                self.result.availability = 1
             else:
-                self.message.append(f"OCSP Service Down {self.queue.url}")
+                self.result.message.append(f"OCSP Service Down {self.queue.url}")
             
             for cert in ocsp_resp.certificates:
                 if(get_is_ca(cert) == False):
                     if(self.verify_ocsp_cert(cert) == True):
-                        self.verification = 1
+                        self.result.verification = 1
                     else:
-                        self.message.append("OCSP Certificate Expired")
+                        self.result.message.append("OCSP Certificate Expired")
             
-            if(self.availability == 1 and self.verification == 1):
-                self.overall = 1
+            if(self.result.availability == 1 and self.result.verification == 1):
+                self.result.overall = 1
         except Exception as err:
-            self.message.append("OCSP verification failed")
+            self.result.message.append("OCSP verification failed")
         
 
 
@@ -121,21 +116,12 @@ class OCSP_verifier():
     def to_dict(self)-> dict:
         return {
             "queue" : self.queue.__dict__,
-            "overall" : self.overall,
-            "availibility" : self.availibility,
-            "verification" : self.verification,
-            "response_time" : self.response_time,
-            "message" : self.message,
+            "result" : self.result.__dict__,
             "content" : self.content
         }
     
     def get_verification_result(self) -> dict:
-        return {
-            "overall" : self.overall,
-            "availibility" : self.availibility,
-            "verification" : self.verification,
-            "response_time" : self.response_time
-        }
+        return self.result.get_dict_result()
 
     def get_ca_info(self) -> dict:
         return {
@@ -149,9 +135,6 @@ class OCSP_verifier():
         queue = Queue_Schema.from_dict(input["queue"])
 
         obj = cls(queue)
-        obj.overall = input["overall"]
-        obj.availibility = input["availibility"]
-        obj.verification = input["verification"]
+        obj.result = OCSP_Result_Schema.from_dict(input["result"])
         obj.response_time = input["response_time"]
-        obj.message = input["message"]
         obj.content = input["content"]

@@ -1,7 +1,7 @@
 import requests
 from timeit import default_timer as timer
 from datetime import datetime, timedelta, timezone
-import os
+from src.db_schema.verification_result_schema import CRL_Result_Schema
 
 from src.db_schema.queue_schema import Queue_Schema
 from src.util import cert_handler
@@ -11,28 +11,20 @@ import src.parameters as param
 logger = logging.getLogger(param.LOGGER_NAME)
 
 class CRL_verifier():
-    availibility: int = 0
-    validity: int = 0
-    signature: int = 0
-    time_delta: int = 0 
-    overall: int = 0
-    response_time: int = 0
+
+    result: CRL_Result_Schema
 
     content: dict = {}
-    message: list[str] = []
 
     queue: Queue_Schema
 
     def __init__(self, queue_: dict):
-        self.queue = Queue_Schema.from_dict(queue_)
-        self.message = []
-        self.availibility = 0
-        self.validity = 0
-        self.signature = 0
-        self.time_delta = 0 
-        self.overall = 0
-        self.response_time = 0
 
+        self.result = CRL_Result_Schema()
+        self.queue = Queue_Schema.from_dict(queue_)
+        self.result.issuer_dn = self.queue.issuer_dn
+        self.result.issuer_keyid = self.queue.issuer_keyid
+        self.result.url = self.queue.url
         self.content = {}
     
     def request_crl(self):
@@ -49,15 +41,15 @@ class CRL_verifier():
                 ret_byte = response.content
                 return ret_byte
             else:
-                self.message.append(f"Error status code {response.status_code}")
+                self.result.message.append(f"Error status code {response.status_code}")
                 logger.warning(f"status code {self.queue.url} : {response.status_code}")
         except Exception as err:
             # logger.error("Connection Error : "+input["url"],exc_info=True)
             logger.error(f"Connection Error : {self.queue.url}",exc_info=True)
-            self.message.append("Unable to connect")
+            self.result.message.append("Unable to connect")
         finally:
             endtime = timer()
-            self.response_time = endtime - strtime
+            self.result.response_time = endtime - strtime
             return ret_byte
 
     def verify_crl(self,crldata):
@@ -65,35 +57,37 @@ class CRL_verifier():
         crl = cert_handler.read_crl_from_content(crldata)
 
         if crl != None:
-            self.availibility = 1
-        else:
-            self.message.append("cannot load crl response data")
-        
-        timeDiff = crl.next_update_utc - crl.last_update_utc
+            self.result.availability = 1
 
-        now_tz = datetime.now().astimezone()
+            timeDiff = crl.next_update_utc - crl.last_update_utc
 
-        next_update = crl.next_update_utc.astimezone()
+            now_tz = datetime.now().astimezone()
 
-        if(next_update > now_tz):
-            self.validity = 1
-        else:
-            self.message.append("CRL Expired")
-        
-        if(timeDiff < timedelta(hours=30)):
-            self.time_delta = 1
-        else:
-            self.message.append("CRL Validity too Long")
-        
-        if(self.queue.issuer_file_pem != ""):
-            cert = cert_handler.read_cert_from_pem_str(self.queue.issuer_file_pem)
-            if(crl.is_signature_valid(cert.public_key())):
-                self.signature = 1
+            next_update = crl.next_update_utc.astimezone()
+
+            if(next_update > now_tz):
+                self.result.validity = 1
             else:
-                self.message.append("CRL Signature Invalid")
+                self.result.message.append("CRL Expired")
+            
+            if(timeDiff < timedelta(hours=30)):
+                self.result.time_delta = 1
+            else:
+                self.result.message.append("CRL Validity too Long")
+            
+            if(self.queue.issuer_file_pem != ""):
+                cert = cert_handler.read_cert_from_pem_str(self.queue.issuer_file_pem)
+                if(crl.is_signature_valid(cert.public_key())):
+                    self.result.signature = 1
+                else:
+                    self.result.message.append("CRL Signature Invalid")
+        else:
+            self.result.message.append("cannot load crl response data")
         
-        if(self.availibility == 1 and self.validity == 1 and self.signature == 1):
-            self.overall = 1
+        
+        
+        if(self.result.availability == 1 and self.result.validity == 1 and self.result.signature == 1):
+            self.result.overall = 1
 
     def get_crl_content(self, crldata):
         crl = cert_handler.read_crl_from_content(crldata)
@@ -115,25 +109,12 @@ class CRL_verifier():
     def to_dict(self):
         return {
             "queue" : self.queue.__dict__,
-            "overall" : self.overall,
-            "availibility" : self.availibility,
-            "validity" : self.validity,
-            "signature" : self.signature,
-            "time_delta" : self.time_delta,
-            "response_time" : self.response_time,
-            "message" : self.message,
+            "result" : self.result.__dict__,
             "content" : self.content
         }
     
     def get_verification_result(self) -> dict:
-        return {
-            "overall" : self.overall,
-            "availibility" : self.availibility,
-            "validity" : self.validity,
-            "signature" : self.signature,
-            "time_delta" : self.time_delta,
-            "response_time" : self.response_time
-        }
+        return self.result.get_dict_result()
 
     def get_ca_info(self) -> dict:
         return {
@@ -147,11 +128,5 @@ class CRL_verifier():
         queue = Queue_Schema.from_dict(input["queue"])
 
         obj = cls(queue)
-        obj.overall = input["overall"]
-        obj.availibility = input["availibility"]
-        obj.validity = input["validity"]
-        obj.signature = input["signature"]
-        obj.time_delta = input["time_delta"]
-        obj.response_time = input["response_time"]
-        obj.message = input["message"]
+        obj.result = CRL_Result_Schema.from_dict(input["result"])
         obj.content = input["content"]
