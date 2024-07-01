@@ -30,7 +30,7 @@ def set_ticket(issuer_keyid:str, issuer_dn:str, message:str, url:str):
               message=message,
               cn=issuer_dn.split("CN=")[1].split(",")[0],
               url=url,
-              start=datetime.datetime.now())
+              start=datetime.now())
 
 # def set_ticket_from
 def to_object_from_db(dict_) -> Tickets_Schema:

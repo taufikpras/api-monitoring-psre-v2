@@ -1,6 +1,6 @@
 import requests
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import logging
 import src.parameters as param
@@ -31,7 +31,7 @@ def send_reguler_report(report_input:dict):
     logger.debug(report_input)
     msg = ""
     current_date_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    start_date_time = (datetime.now() - datetime.timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+    start_date_time = (datetime.now() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
     msg += f'Start Time: {start_date_time}\n'
     msg += f'End Time: {current_date_time}\n'
     for key in report_input.keys():
