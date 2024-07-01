@@ -1,14 +1,14 @@
 from pydantic import BaseModel
-import datetime
+from datetime import datetime
 import hashlib
 
 
 class Tickets_Schema(BaseModel):
     
     ticket_id: str = ""
-    start: datetime.datetime = None
-    end: datetime.datetime | None = None
-    last_notif: datetime.datetime | None = None
+    start: datetime = None
+    end: datetime | None = None
+    last_notif: datetime | None = None
     cn: str
     url: str
     resolve: bool = False

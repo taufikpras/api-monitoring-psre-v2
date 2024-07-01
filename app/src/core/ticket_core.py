@@ -23,6 +23,12 @@ def find_active_tickets(result:Result_Schema) -> Tickets_Schema:
     result = to_object_from_db(collection.find_one({"ticket_id":ticket_id, "resolve":False}))
     return result
 
+def find_active_tickets_by_uid(ticket_id:str) -> Tickets_Schema:
+    collection = db[COLLECTION_NAME]
+    # ticket_id = create_ticket_id(issuer_keyid=result.issuer_keyid, issuer_dn=result.issuer_dn, url=result.url)
+    result = to_object_from_db(collection.find_one({"ticket_id":ticket_id, "resolve":False}))
+    return result
+
 def insert_one_from_result(result:Result_Schema) -> Tickets_Schema:
     collection = db[COLLECTION_NAME]
     exist = find_active_tickets(result)
