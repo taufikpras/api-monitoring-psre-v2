@@ -7,9 +7,10 @@ import src.util.net_handler as net_handler
 import src.util.file_handler as file_handler
 import logging
 import src.parameters as param
+logger = logging.getLogger(param.LOGGER_NAME)
 
 COLLECTION_NAME = "ocsp"
-logger = logging.getLogger(param.LOGGER_NAME)
+
 def get_all():
     collection = db[COLLECTION_NAME]
     results = to_list_of_object_from_db(collection.find())

@@ -2,7 +2,8 @@ from pydantic import BaseModel
 import datetime
 import hashlib
 
-class Tickets(BaseModel):
+
+class Tickets_Schema(BaseModel):
     uid: str
     start: datetime.datetime = None
     end: datetime.datetime | None = None
@@ -13,27 +14,18 @@ class Tickets(BaseModel):
     message: str 
     occurance: int = 1
 
-class TicketsInput(BaseModel):
-    ca_id:str
-    cn:str
-    obj_id:str
-    message:str
-    url: str
-
-def create_uid(ca_id:str, object_id:str):
-    uid_ = ca_id + object_id
+def create_uid(issuer_keyid:str,url:str, issuer_dn:str):
+    uid_ = issuer_dn + issuer_keyid + url
     uid = hashlib.sha1(uid_.encode('utf-8')).hexdigest()
 
     return uid
 
-def set_ticket_from_input(input:TicketsInput):
-    uid_ = input.ca_id + input.obj_id
-    uid = hashlib.sha1(uid_.encode('utf-8')).hexdigest()
-    return Tickets(uid=uid,
-              message=input.message,
-              cn=input.cn,
-              url=input.url,
-              start=datetime.datetime.now())
+def __init__(self, issuer_keyid, issuer_dn, issuer_cn, url, message):
+    self.uid = create_uid(issuer_keyid, url, issuer_dn)
+    self.cn = issuer_cn
+    self.url = url
+    self.message = message
+
 
 def setTicket(ca_id:str, object_id:str, message:str, cn:str, url:str):
     uid_ = ca_id + object_id
@@ -45,7 +37,7 @@ def setTicket(ca_id:str, object_id:str, message:str, cn:str, url:str):
               start=datetime.datetime.now())
 
 # def set_ticket_from
-def to_object(dict_) -> Tickets:
+def to_object_from_db(dict_) -> Tickets:
     print(dict_)
     return Tickets(
         uid=dict_["uid"],
@@ -59,23 +51,5 @@ def to_object(dict_) -> Tickets:
         last_notif= None if dict_["last_notif"] == "" else datetime.datetime.strptime(dict_["last_notif"],"%Y-%m-%d %H:%M:%S")
     )
 
-def individual(objct) -> dict:
-    
-    if(objct != None):
-        return{
-            "id": str(objct["_id"]),
-            "uid": str(objct["uid"]),
-            "start": objct["start"].strftime("%Y-%m-%d %H:%M:%S"),
-            "end": "" if objct["end"] is None else objct["end"].strftime("%Y-%m-%d %H:%M:%S"),
-            "last_notif": "" if objct["last_notif"] is None else objct["last_notif"].strftime("%Y-%m-%d %H:%M:%S"),
-            "message": str(objct["message"]),
-            "cn": str(objct["cn"]),
-            "url": str(objct["url"]),
-            "occurance": int(objct["occurance"]),
-            "resolve": bool(objct["resolve"])
-        }
-    else:
-        return None
-
-def list_serial(objcts) -> list:
-    return[individual(objct) for objct in objcts]
+def to_list_of_object_from_db(objcts) -> list:
+    return[to_object_from_db(objct) for objct in objcts]
