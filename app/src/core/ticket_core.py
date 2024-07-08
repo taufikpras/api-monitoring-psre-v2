@@ -38,13 +38,19 @@ def insert_one_from_result(result:Result_Schema) -> Tickets_Schema:
         res = exist
     return res
 
+def find_ticket_by_last_notif(input:Tickets_Schema) -> Tickets_Schema:
+    collection = db[COLLECTION_NAME]    
+    result = to_object_from_db(collection.find_one({"ticket_id":input.ticket_id,"last_notif":input.last_notif}))
+    return result
+
+
 def delete_one(ticket_id:str):
     collection = db[COLLECTION_NAME]
     return str(collection.find_one_and_delete({"ticket_id":ticket_id, "resolve":False}))
 
 def update(input:Tickets_Schema):
     collection = db[COLLECTION_NAME]
-    res = collection.find_one_and_update({"ticket_id":input.ticket_id, "resolve":False}, {"$set": dict(input)},return_document=True)
+    res = collection.find_one_and_update({"ticket_id":input.ticket_id, "resolve":input.resolve}, {"$set": dict(input)},return_document=True)
     return to_object_from_db(res)
 
 
@@ -86,32 +92,34 @@ def log_ticket(result:Result_Schema)-> Tickets_Schema:
             ret = set_resolve(result)
     return ret
 
-# def get_ticket_for_realtime_notif():
-#     collection = db[COLLECTION_NAME]
+def get_ticket_for_realtime_notif()->list[Tickets_Schema]:
+    collection = db[COLLECTION_NAME]
 
-#     time_ = datetime.now() - timedelta(hours=2)
-#     new_notif = {"$and":[{"last_notif":None},{"occurance":{"$gte":MIN_OCCURANCE}}]}
-#     old_notif = {"$and":[{'last_notif': {"$lte": time_}},{"resolve":False}]}
-#     params = {"$or":[old_notif, new_notif]}
+    time_ = datetime.now() - timedelta(hours=2)
+    new_notif = {"$and":[{"last_notif":None},{"occurance":{"$gte":MIN_OCCURANCE}}]}
+    old_notif = {"$and":[{'last_notif': {"$lte": time_}},{"resolve":False}]}
+    params = {"$or":[old_notif, new_notif]}
 
-#     result = collection.find(params)
-#     return list_serial(result)
+    result = collection.find(params)
+    return to_list_of_object_from_db(result)
 
-# def get_ticket_for_reguler_report():
-#     collection = db[COLLECTION_NAME]
+def get_ticket_for_reguler_report():
+    collection = db[COLLECTION_NAME]
 
-#     time_ = datetime.now() - timedelta(days=7)
-#     params = {'start': {"$gte": time_}}
+    time_ = datetime.now() - timedelta(days=7)
+    params = {'start': {"$gte": time_}}
 
-#     result = collection.find(params)
-#     return list_serial(result)
+    result = collection.find(params)
+    return to_list_of_object_from_db(result)
 
-# def update_last_notif(id):
-#     collection = db[COLLECTION_NAME]
-#     result = collection.find_one({"_id":ObjectId(id)})
-#     result["last_notif"] = datetime.now()
-#     res = collection.find_one_and_update({"_id":ObjectId(result["_id"])}, {"$set": result},return_document=True)
-#     return individual(res)
+def update_last_notif(input:Tickets_Schema) -> Tickets_Schema:
+    collection = db[COLLECTION_NAME]
+    result = find_ticket_by_last_notif(input)
+    input.last_notif = datetime.now()
+    logger.debug(input.model_dump())
+    res = collection.find_one_and_update({"ticket_id":input.ticket_id, "last_notif":result.last_notif}, {"$set": dict(input)},return_document=True)
+    
+    return to_object_from_db(res)
 
 
 

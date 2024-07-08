@@ -22,8 +22,8 @@ services:
       INFLUX_TOKEN: s3cr3ttok3n
       TIME_INTERVAL: 180
       TELEGRAM_BOT_TOKEN: 917180406:AAGDpIQdIDQ6IArbaifIJaUgYX-6_sE50qo
-      TELEGRAM_CHAT_ID: -4188107736 
-      SEND_NOTIF: 0
+      TELEGRAM_CHAT_ID: -1002150723538 
+      SEND_NOTIF: 1
     depends_on:
       - mongo
       - influxdb
@@ -70,13 +70,16 @@ services:
     container_name: celery_worker1
     restart: always
     build: ../../app/.
-    command: celery -A src.celery worker --concurrency=3 --pool=prefork --loglevel=info
+    command: celery -A src.celery worker --concurrency=3 --pool=prefork --loglevel=debug
     volumes:
       - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
     environment:
       TZ: "Asia/Jakarta"
       CELERY_TIMEZONE: "Asia/Jakarta"
       CELERY_ENABLE_UTC: False
+      TELEGRAM_BOT_TOKEN: 917180406:AAGDpIQdIDQ6IArbaifIJaUgYX-6_sE50qo
+      TELEGRAM_CHAT_ID: -1002150723538 
+      SEND_NOTIF: 1
     depends_on:
       - redis
       - influxdb
@@ -85,13 +88,16 @@ services:
     container_name: celery_worker2
     restart: always
     build: ../../app/.
-    command: celery -A src.celery worker --concurrency=3 --pool=prefork --loglevel=info
+    command: celery -A src.celery worker --concurrency=3 --pool=prefork --loglevel=debug
     volumes:
       - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
     environment:
       TZ: "Asia/Jakarta"
       CELERY_TIMEZONE: "Asia/Jakarta"
       CELERY_ENABLE_UTC: False
+      TELEGRAM_BOT_TOKEN: 917180406:AAGDpIQdIDQ6IArbaifIJaUgYX-6_sE50qo
+      TELEGRAM_CHAT_ID: -1002150723538 
+      SEND_NOTIF: 1
     depends_on:
       - redis
       - influxdb

@@ -1,9 +1,11 @@
 
 from src.db_schema.queue_schema import Queue_Schema
+from src.db_schema.ticket_schema import Tickets_Schema
 from src.core import queue_core, ticket_core
 from src.util.crl_verifier import CRL_verifier
 from src.util.ocsp_verifier import OCSP_verifier
 import src.util.influx_handler as influx_handler
+from src.util import telegram_util
 
 from src import parameters
 from celery import Celery
@@ -51,3 +53,25 @@ def ocsp_verifier(queue: dict):
     ticket_core.log_ticket(verifier.result)
 
     return verifier.to_dict()
+
+
+@celery_app.task()
+def send_notification(notif: dict):
+    notif_obj = Tickets_Schema.model_validate(notif)
+    msg = telegram_util.send_ticket_notification(notif_obj)
+    ticket_core.update_last_notif(notif_obj)
+    
+    return msg
+    
+    
+
+@celery_app.task()
+def verifier_notification():
+    notifs =  ticket_core.get_ticket_for_realtime_notif()
+    
+    if(notifs.__len__()>0):
+        for notif in notifs:
+            send_notification.delay(notif.model_dump())
+    
+    return notifs.__len__()
+    

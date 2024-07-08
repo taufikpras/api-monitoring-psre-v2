@@ -19,11 +19,18 @@ app.include_router(test_router)
 app.include_router(verfier_router)
 
 
-@app.on_event("startup")
-@repeat_every(seconds=180)  # 1 hour
+@repeat_every(seconds=120)  # 1 hour
 async def repeated_task():
     logger.info("Executing verification task")
     celery.create_periodic_verification()
     logger.info("Done executing verification task")
+    
+    logger.info("Send Notfication Task")
+    num = celery.verifier_notification()
+    logger.info(f"{num} Notifications found")
+    logger.info("Done Sending Notfication Task")
 
+@app.on_event("startup")
+async def startup_event():
+    await repeated_task()
 
