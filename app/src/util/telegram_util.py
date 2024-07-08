@@ -12,21 +12,10 @@ logger = logging.getLogger(param.LOGGER_NAME)
 # def regular_report(dict):
 
 def send_message(header:str, message:str=""):
-    telegram_bot_token = ""
-    telegram_chat_id = ""
-    node_name = "DEV"
-    send_notif = 1
-    if(os.environ.get("TELEGRAM_BOT_TOKEN") != None):
-        telegram_bot_token = str(os.environ.get("TELEGRAM_BOT_TOKEN"))
-
-    if(os.environ.get("TELEGRAM_CHAT_ID") != None):
-        telegram_chat_id = str(os.environ.get("TELEGRAM_CHAT_ID"))
-    
-    if(os.environ.get("NODE_NAME") != None):
-        node_name = str(os.environ.get("NODE_NAME"))
-
-    if(os.environ.get("SEND_NOTIF") != None):
-        send_notif = int(os.environ.get("SEND_NOTIF"))
+    telegram_bot_token = param.TELEGRAM_BOT_TOKEN
+    telegram_chat_id = param.TELEGRAM_CHAT_ID
+    node_name = param.NODE_NAME
+    send_notif = int(param.SEND_NOTIF)
 
     TOKEN = telegram_bot_token
     chat_id = telegram_chat_id

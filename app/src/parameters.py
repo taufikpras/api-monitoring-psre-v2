@@ -25,3 +25,9 @@ INFLUX_BUCKET = check_param("INFLUX_BUCKET","monitoring")
 CELERY_ENABLE_UTC = check_param("CELERY_ENABLE_UTC","False")
 TZ = check_param("TZ","Asia/Jakarta")
 
+TELEGRAM_BOT_TOKEN = check_param("TELEGRAM_BOT_TOKEN","")
+TELEGRAM_CHAT_ID = check_param("TELEGRAM_CHAT_ID","-1002150723538")
+NODE_NAME = check_param("NODE_NAME","PROD")
+SEND_NOTIF = check_param("SEND_NOTIF","1")
+
+
