@@ -31,7 +31,7 @@ def send_message(header:str, message:str=""):
         logger.info(f'SENDING NOTIFICATION\n\n {message}')
     # logging.info(result)
 
-    return url
+    return result
 
 def send_reguler_report(report_input:dict):
     logger.debug(report_input)
