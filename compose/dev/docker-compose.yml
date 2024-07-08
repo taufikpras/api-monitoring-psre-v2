@@ -110,8 +110,6 @@ services:
     command: celery -A src.celery flower --broker=redis://redis:6379/0 --port=5555
     environment:
       TZ: "Asia/Jakarta"
-      CELERY_TIMEZONE: "Asia/Jakarta"
-      CELERY_ENABLE_UTC: False
     ports:
       - 5556:5555
     depends_on:

@@ -29,5 +29,5 @@ TELEGRAM_BOT_TOKEN = check_param("TELEGRAM_BOT_TOKEN","")
 TELEGRAM_CHAT_ID = check_param("TELEGRAM_CHAT_ID","-1002150723538")
 NODE_NAME = check_param("NODE_NAME","PROD")
 SEND_NOTIF = check_param("SEND_NOTIF","1")
-
+TIME_INTERVAL = int(check_param("TIME_INTERVAL","180"))
 
