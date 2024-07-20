@@ -7,6 +7,11 @@ class CA_Component_Schema():
     crls: list[CRL_Schema]
     ocsps: list[OCSP_Schema]
 
+    def __init__(self) -> None:
+        self.ca = None
+        crls = []
+        ocsps = []
+
     def model_dump(self):
         return {
             "ca":self.ca.model_dump(),

@@ -5,6 +5,8 @@ from src.core import crl_core, ocsp_core
 from src.db_schema.database import db
 from src.util import file_handler
 from bson import ObjectId
+import re
+
 import logging
 import src.parameters as param
 logger = logging.getLogger(param.LOGGER_NAME)
@@ -51,6 +53,11 @@ def find_ca_by_dn_keyid(input_:CA_Schema):
     result = to_object_from_db(collection.find_one({"dn":input_.dn, "keyid":input_.keyid}))
     return result
 
+def search_ca_by_dn(search:str)->list[CA_Schema]:
+    collection = db[COLLECTION_NAME]
+    result = to_list_of_object_from_db(collection.find({"dn" : {'$regex' : '.*' + search + '.*', '$options': 'i'}}))
+    return result
+
 def insert_from_cert(input_file: File_Repo_Schema):
     ca = file_handler.parse_ca_from_file(input_file)
 
@@ -59,8 +66,11 @@ def insert_from_cert(input_file: File_Repo_Schema):
     
     return ca
     
-def get_all_ca_and_component() -> list[CA_Component_Schema]:
-    cas = get_all()
+def get_all_ca_and_component(list_cas:list[CA_Schema] = None) -> list[CA_Component_Schema]:
+    if list_cas == None:
+        cas = get_all()
+    else:
+        cas = list_cas
     ret_list = []
 
     for ca in cas:

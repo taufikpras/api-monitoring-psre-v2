@@ -66,12 +66,16 @@ def send_ticket_notification(ticket:Tickets_Schema):
     if(ticket.resolve):
         msg += f'\U00002705 {ticket.message} \n'
         msg += f'Created : {ticket.start.strftime("%Y-%m-%d %H:%M:%S")} \n'
-        msg += f'Resolved : {ticket.end.strftime("%Y-%m-%d %H:%M:%S")}'
+        msg += f'Resolved : {ticket.end.strftime("%Y-%m-%d %H:%M:%S")}\n'
+        msg += f'CN : {ticket.cn}\n'
+        msg += f'URL : {ticket.url}\n'
         result = send_message("Ticket Resolve", msg)
     else:
         msg += f'\U0001F525 {ticket.message} \n'
         msg += f'Created : {ticket.start.strftime("%Y-%m-%d %H:%M:%S")}\n'
-        result = send_message("Ticket Created", msg)
+        msg += f'CN : {ticket.cn}\n'
+        msg += f'URL : {ticket.url}\n'
+        result = send_message("Ticket Notifications", msg)
     
     logger.debug(result)
 

@@ -15,7 +15,7 @@ import src.core.ca_core as ca_core
 import src.core.crl_core as crl_core
 import src.core.ocsp_core as ocsp_core
 
-str_name = "data"
+str_name = "input"
 router = APIRouter(prefix="/api",tags=[str_name],)
 logger = logging.getLogger("monitoring_psre")
 

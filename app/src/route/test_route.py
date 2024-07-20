@@ -64,7 +64,7 @@ async def test_schema_ticket():
     return ticket_1.model_dump()
 
 @router.get("/send_notification")
-async def sned_notification():
+async def send_notification():
     notifs =  ticket_core.get_ticket_for_realtime_notif()
     res = {}
     res["before"] = notifs

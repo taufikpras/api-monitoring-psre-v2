@@ -6,12 +6,13 @@ Help()
    # Display Help
    echo "Add description of the script functions here."
    echo
-   echo "Syntax: cmd.sh [start_dev | stop_dev | start_prod | stop_prod | rebuild_dev | help]"
+   echo "Syntax: cmd.sh [start_dev | stop_dev | start_prod | stop_prod | restart_dev | rebuild_dev | help]"
    echo "options:"
    echo "start_dev     Start development docker compose."
    echo "stop_dev      Stop development docker compose."
    echo "start_prod    Start production docker compose."
    echo "stop_prod     Stop production docker compose."
+   echo "restart_dev   Restart development docker compose."
    echo "rebuild_dev   rebuild development docker image."
    echo
 }
