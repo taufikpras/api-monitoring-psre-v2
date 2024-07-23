@@ -74,6 +74,7 @@ services:
     volumes:
       - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
     environment:
+      NODE_NAME: DEV
       TZ: "Asia/Jakarta"
       CELERY_TIMEZONE: "Asia/Jakarta"
       CELERY_ENABLE_UTC: False
@@ -92,6 +93,7 @@ services:
     volumes:
       - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
     environment:
+      NODE_NAME: DEV
       TZ: "Asia/Jakarta"
       CELERY_TIMEZONE: "Asia/Jakarta"
       CELERY_ENABLE_UTC: False

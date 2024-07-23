@@ -1,7 +1,7 @@
 services:
   app:
     # build: ../../.
-    image: testimage
+    image: taufikp/monitoring-psre:latest
     container_name: monitoring-app
     # command: fastapi dev /app/src/app.py
     ports:
@@ -14,7 +14,7 @@ services:
       - /home/taufik/project-shared/api-monitoring-psre-v2/temp:/app/tmp
       - /home/taufik/project-shared/api-monitoring-psre-v2/logs:/app/logs:rw
     environment:
-      NODE_NAME: DEV
+      NODE_NAME: PROD
       TZ: "Asia/Jakarta"
       INFLUX_BUCKET: monitoring
       INFLUX_URL: http://influxdb:8086
@@ -22,7 +22,7 @@ services:
       INFLUX_TOKEN: s3cr3ttok3n
       TIME_INTERVAL: 180
       TELEGRAM_BOT_TOKEN: 917180406:AAGDpIQdIDQ6IArbaifIJaUgYX-6_sE50qo
-      TELEGRAM_CHAT_ID: -4188107736 
+      TELEGRAM_CHAT_ID: -1002150723538 
       SEND_NOTIF: 0
     depends_on:
       - mongo
@@ -58,6 +58,60 @@ services:
       DOCKER_INFLUXDB_INIT_ORG: org
       DOCKER_INFLUXDB_INIT_BUCKET: monitoring
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: s3cr3ttok3n
+
+  celery_worker1:
+    container_name: celery_worker1
+    restart: always
+    build: ../../app/.
+    command: celery -A src.celery worker --concurrency=3 --pool=prefork --loglevel=debug
+    volumes:
+      - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
+    environment:
+      TZ: "Asia/Jakarta"
+      CELERY_TIMEZONE: "Asia/Jakarta"
+      CELERY_ENABLE_UTC: False
+      TELEGRAM_BOT_TOKEN: 917180406:AAGDpIQdIDQ6IArbaifIJaUgYX-6_sE50qo
+      TELEGRAM_CHAT_ID: -1002150723538 
+      SEND_NOTIF: 1
+    depends_on:
+      - redis
+      - influxdb
+      - app
+
+  celery_worker2:
+    container_name: celery_worker2
+    restart: always
+    build: ../../app/.
+    command: celery -A src.celery worker --concurrency=3 --pool=prefork --loglevel=debug
+    volumes:
+      - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
+    environment:
+      TZ: "Asia/Jakarta"
+      CELERY_TIMEZONE: "Asia/Jakarta"
+      CELERY_ENABLE_UTC: False
+      TELEGRAM_BOT_TOKEN: 917180406:AAGDpIQdIDQ6IArbaifIJaUgYX-6_sE50qo
+      TELEGRAM_CHAT_ID: -1002150723538 
+      SEND_NOTIF: 1
+    depends_on:
+      - redis
+      - influxdb
+      - app
+
+  flower:
+    container_name: flower
+    restart: always
+    build: ../../app/.
+    command: celery -A src.celery flower --broker=redis://redis:6379/0 --port=5555
+    environment:
+      TZ: "Asia/Jakarta"
+    ports:
+      - 5556:5555
+    depends_on:
+      - app
+      - redis
+      - celery_worker1
+      - celery_worker2
+
 
   mongo-express:
     image: mongo-express
