@@ -1,33 +1,41 @@
 services:
   app:
-    # build: ../../.
     image: taufikp/monitoring-psre:latest
     container_name: monitoring-app
-    # command: fastapi dev /app/src/app.py
+    restart: always
+    command: fastapi run 
     ports:
       - 80:80
-      # - 5678:5678
     volumes:
-      - /home/taufik/project-shared/api-monitoring-psre-v2/src:/app/src
+      # - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
       - /home/taufik/project-shared/api-monitoring-psre-v2/data:/app/data
       - /home/taufik/project-shared/api-monitoring-psre-v2/input:/app/input
       - /home/taufik/project-shared/api-monitoring-psre-v2/temp:/app/tmp
       - /home/taufik/project-shared/api-monitoring-psre-v2/logs:/app/logs:rw
     environment:
-      NODE_NAME: PROD
-      TZ: "Asia/Jakarta"
-      INFLUX_BUCKET: monitoring
-      INFLUX_URL: http://influxdb:8086
-      INFLUX_ORG: org
-      INFLUX_TOKEN: s3cr3ttok3n
-      TIME_INTERVAL: 180
-      TELEGRAM_BOT_TOKEN: 917180406:AAGDpIQdIDQ6IArbaifIJaUgYX-6_sE50qo
-      TELEGRAM_CHAT_ID: -1002150723538 
-      SEND_NOTIF: 0
+      NODE_NAME: ${NODE_NAME}.API
+      TZ: ${TZ}
+      CELERY_TIMEZONE: ${TZ}
+      CELERY_ENABLE_UTC: False
+      INFLUX_BUCKET: ${INFLUX_BUCKET}
+      INFLUX_URL: ${INFLUX_URL}
+      INFLUX_ORG: ${INFLUX_ORG}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      TIME_INTERVAL: ${TIME_INTERVAL}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID} 
+      SEND_NOTIF: ${SEND_NOTIF} 
     depends_on:
       - mongo
       - influxdb
-  
+      - redis
+
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+
   mongo:
     image: mongo
     container_name: mongo
@@ -38,60 +46,65 @@ services:
       - mongodb:/data/db
       - mongoconfig:/data/configdb
     environment:
-      TZ: "Asia/Jakarta"
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: 1234qweR
+      TZ: ${TZ}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
 
   influxdb:
     image: influxdb:2.0
     container_name: influxdb
+    restart: always
     ports:
       - 8086:8086
     volumes:
       - influxdata:/var/lib/influxdb2
       - influxconfig:/etc/influxdb2
     environment:
-      TZ: "Asia/Jakarta"
+      TZ: ${TZ}
       DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: admin
-      DOCKER_INFLUXDB_INIT_PASSWORD: 1234qweR
-      DOCKER_INFLUXDB_INIT_ORG: org
-      DOCKER_INFLUXDB_INIT_BUCKET: monitoring
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: s3cr3ttok3n
+      DOCKER_INFLUXDB_INIT_USERNAME: ${DOCKER_INFLUXDB_INIT_USERNAME}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${DOCKER_INFLUXDB_INIT_PASSWORD}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUX_ORG}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUX_BUCKET}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUX_TOKEN}
 
   celery_worker1:
-    container_name: celery_worker1
+    container_name: ${NODE_NAME}.WORKER.1
     restart: always
-    build: ../../app/.
-    command: celery -A src.celery worker --concurrency=3 --pool=prefork --loglevel=debug
-    volumes:
-      - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
+    image: taufikp/monitoring-psre:latest
+    command: celery -A src.celery worker -n ${NODE_NAME}.WORKER.1 --concurrency=3 --pool=prefork --loglevel=${WORKER_LOG_LEVEL}
+    # volumes:
+    #   - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
     environment:
-      TZ: "Asia/Jakarta"
-      CELERY_TIMEZONE: "Asia/Jakarta"
-      CELERY_ENABLE_UTC: False
-      TELEGRAM_BOT_TOKEN: 917180406:AAGDpIQdIDQ6IArbaifIJaUgYX-6_sE50qo
-      TELEGRAM_CHAT_ID: -1002150723538 
-      SEND_NOTIF: 1
+      NODE_NAME: ${NODE_NAME}.WORKER.1
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID} 
+      INFLUX_BUCKET: ${INFLUX_BUCKET}
+      INFLUX_URL: ${INFLUX_URL}
+      INFLUX_ORG: ${INFLUX_ORG}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      SEND_NOTIF: ${SEND_NOTIF}
     depends_on:
       - redis
       - influxdb
       - app
 
   celery_worker2:
-    container_name: celery_worker2
+    container_name: ${NODE_NAME}.WORKER.2
     restart: always
-    build: ../../app/.
-    command: celery -A src.celery worker --concurrency=3 --pool=prefork --loglevel=debug
-    volumes:
-      - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
+    image: taufikp/monitoring-psre:latest
+    command: celery -A src.celery worker -n ${NODE_NAME}.WORKER.2 --concurrency=3 --pool=prefork --loglevel=${WORKER_LOG_LEVEL}
+    # volumes:
+    #   - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
     environment:
-      TZ: "Asia/Jakarta"
-      CELERY_TIMEZONE: "Asia/Jakarta"
-      CELERY_ENABLE_UTC: False
-      TELEGRAM_BOT_TOKEN: 917180406:AAGDpIQdIDQ6IArbaifIJaUgYX-6_sE50qo
-      TELEGRAM_CHAT_ID: -1002150723538 
-      SEND_NOTIF: 1
+      NODE_NAME: ${NODE_NAME}.WORKER.2
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID} 
+      INFLUX_BUCKET: ${INFLUX_BUCKET}
+      INFLUX_URL: ${INFLUX_URL}
+      INFLUX_ORG: ${INFLUX_ORG}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      SEND_NOTIF: ${SEND_NOTIF}
     depends_on:
       - redis
       - influxdb
@@ -100,7 +113,7 @@ services:
   flower:
     container_name: flower
     restart: always
-    build: ../../app/.
+    image: taufikp/monitoring-psre:latest
     command: celery -A src.celery flower --broker=redis://redis:6379/0 --port=5555
     environment:
       TZ: "Asia/Jakarta"
@@ -121,13 +134,16 @@ services:
       - 8081:8081
     environment:
       TZ: "Asia/Jakarta"
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: 1234qweR
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_USERNAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
       ME_CONFIG_MONGODB_URL: mongodb://root:1234qweR@mongo:27017/
 
   grafana:
     image: grafana/grafana
     container_name: grafana
+    restart: always
     ports:
       - 3000:3000
     depends_on:
