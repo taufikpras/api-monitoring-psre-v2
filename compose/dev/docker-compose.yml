@@ -9,17 +9,17 @@ services:
       # - 5678:5678
     volumes:
       - /home/taufik/project-shared/api-monitoring-psre-v2/app/src:/app/src
-      - /home/taufik/project-shared/api-monitoring-psre-v2/data:/app/data
-      - /home/taufik/project-shared/api-monitoring-psre-v2/input:/app/input
-      - /home/taufik/project-shared/api-monitoring-psre-v2/temp:/app/tmp
-      - /home/taufik/project-shared/api-monitoring-psre-v2/logs:/app/logs:rw
+      - ./data:/app/data
+      - ./input:/app/input
+      - ./temp:/app/tmp
+      - ./logs:/app/logs:rw
     environment:
       NODE_NAME: ${NODE_NAME}.API
       TZ: ${TZ}
       CELERY_TIMEZONE: ${TZ}
       CELERY_ENABLE_UTC: False
       INFLUX_BUCKET: ${INFLUX_BUCKET}
-      INFLUX_URL: ${INFLUX_URL}
+      INFLUX_URL: http://${INFLUX_URL}:${INFLUX_PORT}
       INFLUX_ORG: ${INFLUX_ORG}
       INFLUX_TOKEN: ${INFLUX_TOKEN}
       TIME_INTERVAL: ${TIME_INTERVAL}
@@ -35,20 +35,20 @@ services:
     image: redis
     container_name: redis
     ports:
-      - "6379:6379"
+      - ${REDIS_PORT}:${REDIS_PORT}
 
   mongo:
     image: mongo
     container_name: mongo
     restart: always
     ports:
-      - 27017:27017
+      - ${MONGO_PORT}:${MONGO_PORT}
     volumes:
       - mongodb:/data/db
       - mongoconfig:/data/configdb
     environment:
       TZ: ${TZ}
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
 
   influxdb:
@@ -81,7 +81,7 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID} 
       INFLUX_BUCKET: ${INFLUX_BUCKET}
-      INFLUX_URL: ${INFLUX_URL}
+      INFLUX_URL: http://${INFLUX_URL}:${INFLUX_PORT}
       INFLUX_ORG: ${INFLUX_ORG}
       INFLUX_TOKEN: ${INFLUX_TOKEN}
       SEND_NOTIF: ${SEND_NOTIF}
@@ -102,7 +102,7 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID} 
       INFLUX_BUCKET: ${INFLUX_BUCKET}
-      INFLUX_URL: ${INFLUX_URL}
+      INFLUX_URL: http://${INFLUX_URL}:${INFLUX_PORT}
       INFLUX_ORG: ${INFLUX_ORG}
       INFLUX_TOKEN: ${INFLUX_TOKEN}
       SEND_NOTIF: ${SEND_NOTIF}
