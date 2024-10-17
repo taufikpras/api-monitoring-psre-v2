@@ -1,4 +1,5 @@
-cd app
+#!/bin/sh
+cd app/
 current_date=$(date +"%Y.%m.%d")
 tag="taufikp/monitoring-psre:${current_date}"
 echo $tag

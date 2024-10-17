@@ -101,10 +101,11 @@ def log_ticket(result:Result_Schema)-> Tickets_Schema:
 def get_ticket_for_realtime_notif()->list[Tickets_Schema]:
     collection = db[COLLECTION_NAME]
 
-    time_ = datetime.now() - timedelta(hours=2)
+    time_ = datetime.now() - timedelta(hours=7*24)
     new_notif = {"$and":[{"last_notif":None},{"occurance":{"$gte":MIN_OCCURANCE}}]}
     old_notif = {"$and":[{'last_notif': {"$lte": time_}},{"resolve":False}]}
-    params = {"$or":[old_notif, new_notif]}
+    # params = {"$or":[old_notif, new_notif]}
+    params = new_notif
 
     result = collection.find(params)
     return to_list_of_object_from_db(result)
